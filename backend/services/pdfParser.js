@@ -53,16 +53,17 @@ const extractSkills = (text) => {
     }
   });
 
-  // Also parse the "Skills" section for any unlisted skills
+  // Also parse the "Skills" section for additional skills not caught by alias matching
   const skillsSection = extractSection(text, ['skills', 'technical skills', 'core competencies']);
   if (skillsSection) {
     const sectionSkills = skillsSection
-      .split(/[,\n•|\-]/)
-      .map(s => s.trim())
-      .filter(s => s.length > 1 && s.length < 40);
+      .split(/[,\n•|\/\-]/)
+      .map(s => s.trim().replace(/^[:·]\s*/, ''))
+      .filter(s => s.length > 1 && s.length < 30 && !/^\d+$/.test(s) && !/^(and|or|the|with|for|etc)$/i.test(s));
     sectionSkills.forEach(s => {
       const canonical = normalizeSkill(s);
-      if (!found.includes(canonical)) {
+      // Only add if it looks like a real skill (not a generic phrase)
+      if (!found.includes(canonical) && canonical.split(' ').length <= 4) {
         found.push(canonical);
       }
     });

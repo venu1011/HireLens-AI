@@ -27,9 +27,15 @@ const calculateATSScore = (rawText, structuredData) => {
 
   // 1. Keyword Match Score (40 pts)
   const skillCount = structuredData.skills.length;
-  let keywordScore = Math.min(40, skillCount * 2);
-  if (skillCount < 8) feedback.push('Add more technical skills (aim for 10+ skills).');
-  if (skillCount >= 15) keywordScore = 40;
+  let keywordScore;
+  if (skillCount >= 20) keywordScore = 40;
+  else if (skillCount >= 15) keywordScore = 36;
+  else if (skillCount >= 10) keywordScore = 28 + (skillCount - 10) * 1.6;
+  else if (skillCount >= 5) keywordScore = 14 + (skillCount - 5) * 2.8;
+  else keywordScore = skillCount * 2.8;
+  keywordScore = Math.min(40, Math.round(keywordScore));
+  if (skillCount < 5) feedback.push('Add more technical skills (aim for 10+ relevant skills).');
+  else if (skillCount < 10) feedback.push('Consider adding more skills to reach 10+ for a stronger keyword score.');
 
   // 2. Section Completeness Score (20 pts)
   let sectionScore = 0;
@@ -49,6 +55,8 @@ const calculateATSScore = (rawText, structuredData) => {
   const strongVerbsUsed = STRONG_ACTION_VERBS.filter(v => lower.includes(v));
   const weakVerbsUsed = WEAK_VERBS.filter(v => lower.includes(v));
   let actionVerbScore = Math.min(15, strongVerbsUsed.length * 1.5);
+  // Penalize for weak verbs
+  actionVerbScore = Math.max(0, actionVerbScore - weakVerbsUsed.length * 1);
   actionVerbScore = Math.round(actionVerbScore);
 
   if (weakVerbsUsed.length > 0) {
@@ -73,18 +81,26 @@ const calculateATSScore = (rawText, structuredData) => {
     if (matches) metricsCount += matches.length;
   });
 
-  let metricsScore = Math.min(15, metricsCount * 2);
-  if (metricsCount < 3) {
+  let metricsScore = Math.min(15, Math.round(metricsCount * 2.5));
+  if (metricsCount === 0) {
     feedback.push('Add measurable achievements (e.g., "improved performance by 40%", "served 10k users").');
+  } else if (metricsCount < 3) {
+    feedback.push('Add more quantified results — aim for 3+ metrics across your experience.');
   }
 
   // 5. Formatting Rules Score (10 pts)
   let formattingScore = 0;
   const wordCount = rawText.split(/\s+/).length;
 
-  if (wordCount >= 300) formattingScore += 3;
-  if (wordCount <= 800) formattingScore += 2;
-  else feedback.push('Resume is too long. Keep it under 1 page for early-career or 2 pages max.');
+  if (wordCount >= 300 && wordCount <= 800) formattingScore += 4;
+  else if (wordCount >= 200 && wordCount <= 1000) formattingScore += 2;
+  else if (wordCount < 200) {
+    formattingScore += 1;
+    feedback.push('Resume is too short. Aim for 300-800 words with detailed experience.');
+  } else {
+    formattingScore += 1;
+    feedback.push('Resume appears long. Keep it concise — 1 page for early-career, 2 pages max.');
+  }
 
   if (structuredData.email) formattingScore += 2;
   else feedback.push('Add your email address.');
@@ -92,7 +108,8 @@ const calculateATSScore = (rawText, structuredData) => {
   if (structuredData.phone) formattingScore += 2;
   else feedback.push('Add a phone number.');
 
-  if (structuredData.name) formattingScore += 1;
+  if (structuredData.name && structuredData.name.length > 1) formattingScore += 2;
+  else feedback.push('Ensure your full name is clearly visible at the top.');
 
   const total = Math.round(keywordScore + sectionScore + actionVerbScore + metricsScore + formattingScore);
 

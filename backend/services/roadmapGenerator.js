@@ -23,14 +23,14 @@ const SKILL_ROADMAPS = {
     resources: ['Angular Official Docs', 'Udemy - Angular - The Complete Guide', 'Angular University'],
     estimatedTime: '5-7 weeks'
   },
-  'Typescript': {
+  'TypeScript': {
     level: 'intermediate',
     topics: ['Types & Interfaces', 'Generics', 'Enums', 'Union & Intersection Types', 'Type Guards', 'Decorators', 'tsconfig'],
     resources: ['TypeScript Official Handbook', 'Total TypeScript', 'Execute Program TypeScript'],
     estimatedTime: '2-3 weeks'
   },
   // Backend
-  'Node.Js': {
+  'Node.js': {
     level: 'intermediate',
     topics: ['Node.js Core Modules', 'Event Loop', 'Streams & Buffers', 'Express.js', 'Middleware', 'Error Handling', 'Authentication'],
     resources: ['Node.js Official Docs', 'The Odin Project', 'Traversy Media - Node.js Crash Course'],
@@ -54,20 +54,20 @@ const SKILL_ROADMAPS = {
     resources: ['Flask Official Docs', 'Corey Schafer Flask Series', 'Miguel Grinberg Flask Tutorial'],
     estimatedTime: '3-4 weeks'
   },
-  'Fastapi': {
+  'FastAPI': {
     level: 'intermediate',
     topics: ['Path Operations', 'Request Body & Validation', 'Pydantic Models', 'Async Support', 'Dependency Injection', 'OAuth2', 'OpenAPI'],
     resources: ['FastAPI Official Docs', 'TestDriven.io FastAPI', 'ArjanCodes FastAPI Tutorial'],
     estimatedTime: '2-3 weeks'
   },
   // Databases
-  'Mongodb': {
+  'MongoDB': {
     level: 'beginner',
     topics: ['Documents & Collections', 'CRUD Operations', 'Aggregation Pipeline', 'Indexes', 'Schema Design', 'Mongoose ODM', 'Atlas Cloud'],
     resources: ['MongoDB University (Free)', 'Mongoose Docs', 'Traversy Media MongoDB Crash Course'],
     estimatedTime: '2-3 weeks'
   },
-  'Postgresql': {
+  'PostgreSQL': {
     level: 'intermediate',
     topics: ['SQL Fundamentals', 'Tables & Relations', 'Joins & Subqueries', 'Indexes & Performance', 'Transactions', 'Stored Procedures', 'PgAdmin'],
     resources: ['PostgreSQL Official Docs', 'Full Stack Python', 'Mode Analytics SQL Tutorial'],
@@ -92,7 +92,7 @@ const SKILL_ROADMAPS = {
     resources: ['Kubernetes Official Docs', 'TechWorld with Nana - Kubernetes', 'KodeKloud Kubernetes'],
     estimatedTime: '4-6 weeks'
   },
-  'Aws': {
+  'AWS': {
     level: 'intermediate',
     topics: ['IAM & Security', 'EC2 & Auto Scaling', 'S3', 'RDS / DynamoDB', 'Lambda & Serverless', 'API Gateway', 'CloudFormation'],
     resources: ['AWS Free Tier', 'AWS Skill Builder', 'Stephane Maarek Udemy Courses', 'Cloud Quest (AWS)'],
@@ -105,13 +105,13 @@ const SKILL_ROADMAPS = {
     resources: ['Andrew Ng ML Course (Coursera)', 'Hands-On ML (Aurélien Géron)', 'Kaggle Courses', 'Fast.ai'],
     estimatedTime: '8-12 weeks'
   },
-  'Tensorflow': {
+  'TensorFlow': {
     level: 'advanced',
     topics: ['Tensors & Operations', 'Keras API', 'Neural Network Layers', 'CNNs & RNNs', 'Transfer Learning', 'Model Saving', 'TF Serving'],
     resources: ['TensorFlow Official Docs', 'DeepLearning.AI TF Developer Certificate', 'MIT 6.S191'],
     estimatedTime: '6-8 weeks'
   },
-  'Pytorch': {
+  'PyTorch': {
     level: 'advanced',
     topics: ['Tensors & Autograd', 'nn.Module', 'Training Loop', 'CNNs', 'RNNs & Transformers', 'Distributed Training', 'TorchScript'],
     resources: ['PyTorch Official Tutorials', 'Fast.ai Practical DL', 'Andrej Karpathy Tutorials'],
@@ -129,8 +129,11 @@ const SKILL_ROADMAPS = {
 const generateRoadmap = (missingSkills) => {
   return missingSkills.slice(0, 8).map(skill => {
     const key = Object.keys(SKILL_ROADMAPS).find(
-      k => k.toLowerCase() === skill.toLowerCase() ||
-           skill.toLowerCase().includes(k.toLowerCase())
+      k => k !== 'DEFAULT' && (
+        k.toLowerCase() === skill.toLowerCase() ||
+        skill.toLowerCase().includes(k.toLowerCase()) ||
+        k.toLowerCase().includes(skill.toLowerCase())
+      )
     ) || 'DEFAULT';
 
     const template = SKILL_ROADMAPS[key];
