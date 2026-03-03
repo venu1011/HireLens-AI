@@ -73,7 +73,10 @@ export default function DashboardPage() {
                 </div>
                 <div className="text-center">
                   <p className="font-medium text-white truncate text-sm">{latestResume.fileName}</p>
-                  <p className="text-slate-600 text-xs mt-1">Version {latestResume.version} · {new Date(latestResume.createdAt).toLocaleDateString()}</p>
+                  <p className="text-slate-600 text-xs mt-1">
+                    Version {latestResume.version} · {new Date(latestResume.createdAt).toLocaleDateString()}
+                    {latestResume.atsScore.grade && <span className="ml-1.5 px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ background: `${getScoreHex(latestResume.atsScore.total)}15`, color: getScoreHex(latestResume.atsScore.total) }}>Grade {latestResume.atsScore.grade}</span>}
+                  </p>
                 </div>
                 <div className="space-y-2.5 pt-3">
                   {Object.entries(latestResume.atsScore.breakdown).map(([key, val]) => (

@@ -82,7 +82,7 @@ export default function AnalyzePage() {
       navigate(`/analysis/${analysisRes.data.analysis._id}`)
     } catch (err) {
       clearInterval(interval)
-      toast.error(err.response?.data?.error || 'Analysis failed')
+      toast.error(err.response?.data?.message || err.response?.data?.error || 'Analysis failed')
     } finally {
       setLoading(false)
       setProgress(0)

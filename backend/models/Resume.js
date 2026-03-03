@@ -46,6 +46,7 @@ const ResumeSchema = new mongoose.Schema({
   },
   atsScore: {
     total: { type: Number, default: 0 },
+    grade: { type: String, default: 'F' },
     breakdown: {
       keywordMatch: Number,
       sectionCompleteness: Number,
@@ -53,7 +54,8 @@ const ResumeSchema = new mongoose.Schema({
       measurableMetrics: Number,
       formattingRules: Number
     },
-    feedback: [String]
+    feedback: [mongoose.Schema.Types.Mixed],
+    strengths: [String]
   },
   version: {
     type: Number,

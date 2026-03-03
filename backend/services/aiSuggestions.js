@@ -105,7 +105,7 @@ const generateSuggestions = (rawText, structuredData, missingSkills) => {
  */
 const generateAISuggestions = async (resumeText, jobDescription, missingSkills) => {
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
   const prompt = `You are a professional resume coach and ATS expert.
 
@@ -145,7 +145,7 @@ Return a JSON array of exactly 5 improvement suggestion strings. Example format:
  */
 const rewriteBullet = async (bulletText, context) => {
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
   const prompt = `Rewrite this resume bullet point to be more impactful, specific, and quantified.
 Use strong action verbs and add estimated impact if not provided.
