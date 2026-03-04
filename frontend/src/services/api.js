@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 const API = axios.create({
-  baseURL: '/api',
+  baseURL: import.meta.env.VITE_API_URL + '/api',
   timeout: 30000
 })
 
@@ -26,35 +26,5 @@ API.interceptors.response.use(
     return Promise.reject(error)
   }
 )
-
-// ─── Auth ───────────────────────────────────────────────
-export const authAPI = {
-  register: (data) => API.post('/auth/register', data),
-  login: (data) => API.post('/auth/login', data),
-  getMe: () => API.get('/auth/me')
-}
-
-// ─── Resume ─────────────────────────────────────────────
-export const resumeAPI = {
-  upload: (formData) => API.post('/resume/upload', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-    timeout: 60000
-  }),
-  getAll: () => API.get('/resume'),
-  getOne: (id) => API.get(`/resume/${id}`),
-  delete: (id) => API.delete(`/resume/${id}`),
-  getHistory: () => API.get('/resume/history')
-}
-
-// ─── Analysis ────────────────────────────────────────────
-export const analysisAPI = {
-  analyze: (data) => API.post('/analysis/analyze', data, { timeout: 60000 }),
-  getAll: () => API.get('/analysis'),
-  getOne: (id) => API.get(`/analysis/${id}`),
-  delete: (id) => API.delete(`/analysis/${id}`),
-  getDiff: (id) => API.get(`/analysis/${id}/diff`),
-  optimize: (id) => API.post(`/analysis/${id}/optimize`, {}, { timeout: 120000 }),
-  downloadPDF: (id, data) => API.post(`/analysis/${id}/download-pdf`, data, { responseType: 'blob', timeout: 30000 }),
-}
 
 export default API
