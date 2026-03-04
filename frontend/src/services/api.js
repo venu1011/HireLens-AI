@@ -25,4 +25,29 @@ API.interceptors.response.use(
   }
 )
 
+export const authAPI = {
+  login: (credentials) => API.post('/auth/login', credentials),
+  register: (data) => API.post('/auth/register', data),
+  getMe: () => API.get('/auth/me'),
+}
+
+export const resumeAPI = {
+  upload: (formData) => API.post('/resume/upload', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  getAll: () => API.get('/resume'),
+  getById: (id) => API.get(`/resume/${id}`),
+  delete: (id) => API.delete(`/resume/${id}`),
+}
+
+export const analysisAPI = {
+  analyze: (data) => API.post('/analysis/analyze', data),
+  getAll: () => API.get('/analysis'),
+  getOne: (id) => API.get(`/analysis/${id}`),
+  delete: (id) => API.delete(`/analysis/${id}`),
+  getDiff: (id) => API.get(`/analysis/${id}/diff`),
+  optimize: (id) => API.post(`/analysis/${id}/optimize`),
+  downloadPDF: (id, data) => API.post(`/analysis/${id}/download-pdf`, data, { responseType: 'blob' }),
+}
+
 export default API
