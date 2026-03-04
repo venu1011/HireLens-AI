@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import { resumeAPI, analysisAPI } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { FiUpload, FiFileText, FiBarChart2, FiArrowRight, FiTrendingUp, FiZap } from 'react-icons/fi'
@@ -29,9 +30,9 @@ export default function DashboardPage() {
   if (loading) return <LoadingState />
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8" style={{ animation: 'fadeIn 0.4s ease' }}>
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
-      <div className="mb-10">
+      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="mb-10">
         <div className="flex items-center gap-3 mb-1">
           <div className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold text-white"
             style={{ background: 'linear-gradient(135deg,#3b82f6,#7c3aed)', boxShadow: '0 0 16px rgba(59,130,246,0.2)' }}>
@@ -44,18 +45,25 @@ export default function DashboardPage() {
             <p className="text-slate-600 text-sm">Your resume intelligence dashboard</p>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
-        <StatCard icon={<FiFileText className="w-4 h-4" />} label="Resumes" value={resumes.length} color="#3b82f6" />
-        <StatCard icon={<FiBarChart2 className="w-4 h-4" />} label="Analyses" value={analyses.length} color="#8b5cf6" />
-        <StatCard icon={<FiTrendingUp className="w-4 h-4" />} label="Avg ATS" value={`${avgATS}%`} color="#10b981" />
-        <StatCard icon={<FiZap className="w-4 h-4" />} label="Best Match" value={analyses.length ? `${Math.max(...analyses.map(a => a.matchScore))}%` : '—'} color="#f59e0b" />
+        {[
+          { icon: <FiFileText className="w-4 h-4" />, label: 'Resumes', value: resumes.length, color: '#3b82f6' },
+          { icon: <FiBarChart2 className="w-4 h-4" />, label: 'Analyses', value: analyses.length, color: '#8b5cf6' },
+          { icon: <FiTrendingUp className="w-4 h-4" />, label: 'Avg ATS', value: `${avgATS}%`, color: '#10b981' },
+          { icon: <FiZap className="w-4 h-4" />, label: 'Best Match', value: analyses.length ? `${Math.max(...analyses.map(a => a.matchScore))}%` : '—', color: '#f59e0b' },
+        ].map((s, i) => (
+          <motion.div key={s.label} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.08 * i }}>
+            <StatCard {...s} />
+          </motion.div>
+        ))}
       </div>
 
       {/* Main grid */}
-      <div className="grid lg:grid-cols-3 gap-5">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.3 }}
+        className="grid lg:grid-cols-3 gap-5">
         {/* Latest Resume */}
         <div className="lg:col-span-1">
           <div className="card h-full">
@@ -143,7 +151,7 @@ export default function DashboardPage() {
             )}
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* CTA */}
       {resumes.length > 0 && (

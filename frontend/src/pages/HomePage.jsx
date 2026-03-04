@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom'
-import { FiZap, FiTarget, FiTrendingUp, FiBookOpen, FiArrowRight, FiStar, FiCpu, FiCheck } from 'react-icons/fi'
+import { motion } from 'framer-motion'
+import { useAuth } from '../context/AuthContext'
+import { FiZap, FiTarget, FiTrendingUp, FiBookOpen, FiArrowRight, FiStar, FiCpu, FiCheck, FiColumns, FiDownload } from 'react-icons/fi'
 
 const FEATURES = [
   {
@@ -15,10 +17,16 @@ const FEATURES = [
     desc: 'Match percentage with skill breakdowns — matched, missing, and extra skills via alias-aware NLP.'
   },
   {
+    icon: <FiColumns className="w-5 h-5" />,
+    color: '#14b8a6',
+    title: 'Smart Resume–JD Diff View',
+    desc: 'Side-by-side visual comparison with color-coded highlights for matched, missing skills, weak verbs, and metrics.'
+  },
+  {
     icon: <FiCpu className="w-5 h-5" />,
     color: '#10b981',
-    title: 'AI Improvement Tips',
-    desc: 'Rule-based and Gemini AI suggestions to rewrite weak bullets, add metrics, and optimize structure.'
+    title: 'AI Auto-Optimize',
+    desc: 'One-click Gemini AI resume rewrite — stronger bullets, targeted keywords, optimized structure. Download as PDF.'
   },
   {
     icon: <FiBookOpen className="w-5 h-5" />,
@@ -26,11 +34,17 @@ const FEATURES = [
     title: 'Skill Gap Roadmap',
     desc: 'Curated learning paths with topics, resources, and estimated time for every missing skill.'
   },
+  {
+    icon: <FiDownload className="w-5 h-5" />,
+    color: '#ec4899',
+    title: 'PDF Export',
+    desc: 'Download your AI-optimized resume as a professionally formatted PDF — ready to submit.'
+  },
 ]
 
 const STATS = [
   { value: '100%', label: 'Free' },
-  { value: '5', label: 'ATS Dimensions' },
+  { value: '7', label: 'Analysis Views' },
   { value: 'Gemini', label: 'AI Engine' },
   { value: '150+', label: 'Skills Tracked' },
 ]
@@ -42,8 +56,10 @@ const HOW_IT_WORKS = [
 ]
 
 export default function HomePage() {
+  const { user } = useAuth()
+
   return (
-    <div style={{ animation: 'fadeIn 0.5s ease' }} className="overflow-x-hidden">
+    <div className="overflow-x-hidden">
 
       {/* ---- HERO ---- */}
       <section className="relative py-28 md:py-36 px-4 overflow-hidden">
@@ -57,43 +73,61 @@ export default function HomePage() {
         </div>
 
         <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 mb-8 px-4 py-1.5 rounded-full text-xs font-medium tracking-wide"
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
+            className="inline-flex items-center gap-2 mb-8 px-4 py-1.5 rounded-full text-xs font-medium tracking-wide"
             style={{ background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.12)', color: '#60a5fa' }}>
             <FiZap className="w-3 h-3" />
             Powered by Google Gemini AI
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" style={{ animation: 'pulse-glow 2s infinite' }} />
-          </div>
+          </motion.div>
 
-          <h1 className="text-5xl md:text-7xl font-extrabold text-white leading-[1.08] mb-6 tracking-tight">
+          <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }}
+            className="text-5xl md:text-7xl font-extrabold text-white leading-[1.08] mb-6 tracking-tight">
             Land Your{' '}
             <span className="text-gradient" style={{ backgroundSize: '200% 200%', animation: 'gradientShift 4s ease infinite' }}>
               Dream Job
             </span>
             <br className="hidden sm:block" />
             {' '}With AI Precision
-          </h1>
+          </motion.h1>
 
-          <p className="text-lg md:text-xl text-slate-500 max-w-2xl mx-auto mb-10 leading-relaxed font-light">
+          <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }}
+            className="text-lg md:text-xl text-slate-500 max-w-2xl mx-auto mb-10 leading-relaxed font-light">
             Analyze your resume against any job description. Get ATS scores,
             skill gaps, AI suggestions, and learning roadmaps — instantly.
-          </p>
+          </motion.p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Link to="/register" className="btn-primary text-base px-8 py-3.5 w-full sm:w-auto">
-              <span>Start Free Analysis</span> <FiArrowRight />
-            </Link>
-            <Link to="/login" className="btn-secondary text-base px-8 py-3.5 w-full sm:w-auto">
-              Sign In
-            </Link>
-          </div>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3 }}
+            className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            {user ? (
+              <>
+                <Link to="/analyze" className="btn-primary text-base px-8 py-3.5 w-full sm:w-auto">
+                  <span>Analyze Resume</span> <FiArrowRight />
+                </Link>
+                <Link to="/dashboard" className="btn-secondary text-base px-8 py-3.5 w-full sm:w-auto">
+                  Go to Dashboard
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link to="/register" className="btn-primary text-base px-8 py-3.5 w-full sm:w-auto">
+                  <span>Start Free Analysis</span> <FiArrowRight />
+                </Link>
+                <Link to="/login" className="btn-secondary text-base px-8 py-3.5 w-full sm:w-auto">
+                  Sign In
+                </Link>
+              </>
+            )}
+          </motion.div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-20 max-w-xl mx-auto">
-            {STATS.map(s => (
-              <div key={s.label} className="py-4 px-2 rounded-2xl text-center"
+            {STATS.map((s, i) => (
+              <motion.div key={s.label} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, delay: 0.4 + i * 0.08 }}
+                className="py-4 px-2 rounded-2xl text-center"
                 style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}>
                 <div className="text-xl font-bold text-white">{s.value}</div>
                 <div className="text-slate-600 text-[11px] mt-0.5 font-medium uppercase tracking-widest">{s.label}</div>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -112,16 +146,17 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {FEATURES.map((f, i) => (
-              <div key={i} className="card-hover group p-6 cursor-default">
+              <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-50px' }} transition={{ duration: 0.4, delay: i * 0.08 }}
+                className="card-hover group p-6 cursor-default">
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-110"
                   style={{ background: `${f.color}12`, color: f.color }}>
                   {f.icon}
                 </div>
                 <h3 className="text-base font-semibold text-white mb-2">{f.title}</h3>
                 <p className="text-slate-500 text-sm leading-relaxed">{f.desc}</p>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -137,7 +172,8 @@ export default function HomePage() {
 
           <div className="grid md:grid-cols-3 gap-8">
             {HOW_IT_WORKS.map((item, i) => (
-              <div key={item.step} className="text-center relative">
+              <motion.div key={item.step} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.4, delay: i * 0.12 }}
+                className="text-center relative">
                 {i < 2 && (
                   <div className="hidden md:block absolute top-8 left-[60%] w-[80%] h-px"
                     style={{ background: `linear-gradient(90deg, ${item.color}25, transparent)` }} />
@@ -148,7 +184,7 @@ export default function HomePage() {
                 </div>
                 <h3 className="text-base font-semibold text-white mb-2">{item.title}</h3>
                 <p className="text-slate-500 text-sm leading-relaxed">{item.desc}</p>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -157,7 +193,8 @@ export default function HomePage() {
       {/* ---- CTA ---- */}
       <section className="py-24 px-4">
         <div className="max-w-xl mx-auto">
-          <div className="relative rounded-3xl p-10 text-center overflow-hidden"
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ duration: 0.5 }}
+            className="relative rounded-3xl p-10 text-center overflow-hidden"
             style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 0 80px rgba(59,130,246,0.04)' }}>
             <div className="absolute inset-0 -z-10 opacity-30">
               <div className="absolute top-0 left-1/2 -translate-x-1/2 w-60 h-60 rounded-full" style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.12), transparent 70%)' }} />
@@ -170,11 +207,17 @@ export default function HomePage() {
             <p className="text-slate-500 mb-8 max-w-sm mx-auto leading-relaxed">
               Optimize your resume with AI-powered analysis and land more interviews.
             </p>
-            <Link to="/register" className="btn-primary text-base px-10 py-3.5 inline-flex">
-              <span>Start For Free</span> <FiArrowRight />
-            </Link>
-            <p className="text-slate-700 text-xs mt-4">No credit card required</p>
-          </div>
+            {user ? (
+              <Link to="/analyze" className="btn-primary text-base px-10 py-3.5 inline-flex">
+                <span>Analyze Now</span> <FiArrowRight />
+              </Link>
+            ) : (
+              <Link to="/register" className="btn-primary text-base px-10 py-3.5 inline-flex">
+                <span>Start For Free</span> <FiArrowRight />
+              </Link>
+            )}
+            {!user && <p className="text-slate-700 text-xs mt-4">No credit card required</p>}
+          </motion.div>
         </div>
       </section>
 

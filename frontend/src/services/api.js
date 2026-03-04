@@ -51,7 +51,10 @@ export const analysisAPI = {
   analyze: (data) => API.post('/analysis/analyze', data, { timeout: 60000 }),
   getAll: () => API.get('/analysis'),
   getOne: (id) => API.get(`/analysis/${id}`),
-  delete: (id) => API.delete(`/analysis/${id}`)
+  delete: (id) => API.delete(`/analysis/${id}`),
+  getDiff: (id) => API.get(`/analysis/${id}/diff`),
+  optimize: (id) => API.post(`/analysis/${id}/optimize`, {}, { timeout: 120000 }),
+  downloadPDF: (id, data) => API.post(`/analysis/${id}/download-pdf`, data, { responseType: 'blob', timeout: 30000 }),
 }
 
 export default API
