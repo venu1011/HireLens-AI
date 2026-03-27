@@ -2,10 +2,10 @@
 
 :root {
   /* Ultra-Clear Light Mode */
-  --bg-app: #f1f5f9;
+  --bg-app: #f8fafc;
   --bg-card: #ffffff;
-  --text-main: #0f172a;
-  --text-muted: #334155;
+  --text-main: #020617;
+  --text-muted: #475569;
   --border-main: #cbd5e1;
   --border-accent: #3b82f6;
   --accent-blue: #2563eb;
@@ -14,8 +14,8 @@
 }
 
 .dark {
-  /* Deep Space Dark Mode */
-  --bg-app: #020617;
+  /* Deep Space Obsidian */
+  --bg-app: #030711;
   --bg-card: #0f172a;
   --text-main: #f8fafc;
   --text-muted: #94a3b8;
@@ -39,21 +39,27 @@
     font-family: 'Plus Jakarta Sans', sans-serif;
     @apply antialiased transition-colors duration-300;
   }
+  
+  /* Reset form elements to inherit theme colors correctly */
+  input, textarea, select {
+    background-color: var(--bg-app) !important;
+    color: var(--text-main) !important;
+    border-color: var(--border-main);
+    outline: none !important;
+    box-shadow: none !important;
+  }
 }
 
-/* Global Force Colors (Outside Layers to ensure visibility) */
+/* Global Force Colors */
 #root, body, html {
   color: var(--text-main);
+  background-color: var(--bg-app);
 }
 
 h1, h2, h3, h4, h5, h6 {
   color: var(--text-main) !important;
   font-family: 'Outfit', sans-serif !important;
   @apply font-black tracking-tighter;
-}
-
-p, span, div, li, strong, b {
-  color: inherit;
 }
 
 .text-main { color: var(--text-main) !important; }
@@ -66,10 +72,7 @@ p, span, div, li, strong, b {
     @apply rounded-[2.5rem] p-8 border transition-all duration-300;
     box-shadow: var(--card-shadow);
   }
-  .card:hover {
-    border-color: var(--border-accent);
-    @apply -translate-y-1;
-  }
+  .card:hover { border-color: var(--border-accent); @apply -translate-y-1; }
 
   .stat-card {
     background-color: var(--bg-card);
@@ -90,14 +93,27 @@ p, span, div, li, strong, b {
     color: var(--text-main) !important;
     @apply font-black py-4 px-10 rounded-2xl transition-all duration-300 flex items-center gap-2 justify-center border-2;
   }
-  .btn-secondary:hover {
-    border-color: var(--border-accent);
-    @apply -translate-y-1;
-  }
+  .btn-secondary:hover { border-color: var(--border-accent); @apply -translate-y-1; }
 
   .text-gradient {
     @apply bg-clip-text text-transparent font-black;
     background-image: linear-gradient(135deg, #2563eb 0%, #7c3aed 50%, #db2777 100%);
+  }
+
+  .label {
+    @apply block text-[10px] font-black uppercase tracking-wider text-muted mb-2 ml-1;
+  }
+
+  .input-field {
+    @apply w-full rounded-2xl p-4 text-sm font-bold transition-all duration-300 border-2 outline-none;
+    background-color: var(--bg-app) !important;
+    border-color: var(--border-main);
+    color: var(--text-main) !important;
+  }
+  .input-field:focus {
+    @apply border-blue-500/80 scale-[1.01];
+    box-shadow: 0 0 20px -5px rgba(59, 130, 246, 0.4) !important;
+    outline: none !important;
   }
 }
 
