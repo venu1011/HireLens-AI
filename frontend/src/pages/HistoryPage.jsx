@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { resumeAPI, analysisAPI } from '../services/api'
 import toast from 'react-hot-toast'
-import { FiFileText, FiBarChart2, FiTrash2, FiArrowRight, FiTrendingUp, FiCalendar, FiZap } from 'react-icons/fi'
+import { FiFileText, FiBarChart2, FiTrash2, FiArrowRight, FiTrendingUp, FiCalendar, FiZap, FiPlus } from 'react-icons/fi'
 import {
   Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement,
   Title, Tooltip, Legend, Filler
@@ -59,7 +59,7 @@ export default function HistoryPage() {
       tension: 0.4,
       fill: true,
       pointBackgroundColor: '#3b82f6',
-      pointBorderColor: '#030712',
+      pointBorderColor: '#fff',
       pointBorderWidth: 2,
       pointRadius: 4,
       pointHoverRadius: 6,
@@ -71,192 +71,180 @@ export default function HistoryPage() {
     plugins: {
       legend: { display: false },
       tooltip: {
-        backgroundColor: 'rgba(3,7,18,0.95)',
-        borderColor: 'rgba(59,130,246,0.2)',
-        borderWidth: 1,
-        titleColor: '#64748b',
+        backgroundColor: '#0f172a',
+        titleColor: '#94a3b8',
         bodyColor: '#fff',
         padding: 10,
         cornerRadius: 8,
-        bodyFont: { size: 12 },
       }
     },
     scales: {
-      y: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#334155', font: { size: 10 } } },
-      x: { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#334155', font: { size: 10 } } }
+      y: { min: 0, max: 100, grid: { color: 'rgba(148,163,184,0.1)' }, ticks: { color: '#94a3b8', font: { size: 10 } } },
+      x: { grid: { color: 'rgba(148,163,184,0.1)' }, ticks: { color: '#94a3b8', font: { size: 10 } } }
     }
   }
 
   if (loading) return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-      <div className="w-8 h-8 border-2 border-blue-500/30 border-t-blue-500 rounded-full" style={{ animation: 'spin 0.7s linear infinite' }} />
-      <p className="text-slate-600 text-sm">Loading history...</p>
+    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+      <div className="w-10 h-10 border-3 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
+      <p className="text-muted font-bold animate-pulse">Retrieving vault history...</p>
     </div>
   )
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8" style={{ animation: 'fadeIn 0.4s ease' }}>
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       {/* Header */}
-      <div className="flex items-start justify-between mb-8 flex-wrap gap-4">
+      <div className="flex items-center justify-between mb-12 flex-wrap gap-6">
         <div>
-          <h1 className="text-2xl font-bold text-white">History</h1>
-          <p className="text-slate-600 text-sm mt-1">Track your resume improvements over time</p>
+          <h1 className="text-3xl font-black text-main tracking-tighter">Vault History</h1>
+          <p className="text-muted text-base mt-2 font-bold">Comprehensive record of your career optimization journey.</p>
         </div>
-        <Link to="/analyze" className="btn-primary text-sm py-2 px-5">
-          <FiZap className="w-3.5 h-3.5" /> <span>New Analysis</span>
+        <Link to="/analyze" className="btn-primary py-3 px-8 text-sm">
+          <FiPlus className="w-5 h-5" /> <span>Launch Analysis</span>
         </Link>
       </div>
 
-      {/* Stats */}
+      {/* Stats Grid */}
       {resumes.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
           {[
-            { label: 'Resumes', value: resumes.length, color: '#3b82f6', icon: <FiFileText className="w-3.5 h-3.5" /> },
-            { label: 'Analyses', value: analyses.length, color: '#8b5cf6', icon: <FiBarChart2 className="w-3.5 h-3.5" /> },
-            { label: 'Best ATS', value: `${bestScore}%`, color: '#22c55e', icon: <FiTrendingUp className="w-3.5 h-3.5" /> },
-            { label: 'Avg ATS', value: `${avgScore}%`, color: '#eab308', icon: <FiCalendar className="w-3.5 h-3.5" /> },
+            { label: 'Archives', value: resumes.length, color: '#3b82f6', icon: <FiFileText /> },
+            { label: 'Reports', value: analyses.length, color: '#8b5cf6', icon: <FiBarChart2 /> },
+            { label: 'Peak ATS', value: `${bestScore}%`, color: '#10b981', icon: <FiTrendingUp /> },
+            { label: 'Mean ATS', value: `${avgScore}%`, color: '#f59e0b', icon: <FiCalendar /> },
           ].map(s => (
-            <div key={s.label} className="rounded-xl p-3.5 transition-all duration-300 hover:-translate-y-0.5"
-              style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}>
-              <div className="flex items-center gap-1.5 text-xs font-medium mb-1.5" style={{ color: s.color }}>
+            <div key={s.label} className="stat-card">
+              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.15em] mb-3" style={{ color: s.color }}>
                 {s.icon} {s.label}
               </div>
-              <div className="text-lg font-bold text-white">{s.value}</div>
+              <div className="text-3xl font-black text-main">{s.value}</div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Chart */}
+      {/* Chart Visualization */}
       {resumes.length > 1 && (
-        <div className="card mb-6">
-          <h2 className="font-semibold text-white text-sm mb-3 flex items-center gap-2">
-            <FiTrendingUp className="text-green-400 w-4 h-4" /> ATS Score Progression
-          </h2>
-          <Line data={chartData} options={chartOptions} height={70} />
+        <div className="card mb-10 overflow-hidden">
+          <div className="flex items-center justify-between mb-6">
+             <h2 className="font-black text-main text-lg flex items-center gap-3">
+              <FiTrendingUp className="text-blue-500 w-5 h-5" /> Velocity Tracking
+            </h2>
+            <div className="px-3 py-1 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] font-black uppercase tracking-widest">Growth View</div>
+          </div>
+          <div className="h-[200px] w-full">
+            <Line data={chartData} options={chartOptions} />
+          </div>
         </div>
       )}
 
-      {/* Tabs */}
-      <div className="flex gap-1 p-1 rounded-xl mb-5"
-        style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}>
+      {/* Modern Tabs */}
+      <div className="flex gap-2 p-1.5 rounded-2xl mb-8 bg-app/50 border border-main">
         {[
-          { key: 'resumes', label: 'Resumes', count: resumes.length, icon: <FiFileText className="w-3.5 h-3.5" /> },
-          { key: 'analyses', label: 'Analyses', count: analyses.length, icon: <FiBarChart2 className="w-3.5 h-3.5" /> },
+          { key: 'resumes', label: 'Resume Repository', count: resumes.length, icon: <FiFileText /> },
+          { key: 'analyses', label: 'Analysis History', count: analyses.length, icon: <FiBarChart2 /> },
         ].map(t => (
           <button key={t.key} onClick={() => setTab(t.key)}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium transition-all duration-200"
-            style={tab === t.key ? {
-              background: 'linear-gradient(135deg,rgba(59,130,246,0.15),rgba(124,58,237,0.1))',
-              color: '#fff',
-              border: '1px solid rgba(59,130,246,0.2)',
-            } : { color: 'rgba(255,255,255,0.3)' }}>
+            className={`flex-1 flex items-center justify-center gap-3 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 ${tab === t.key ? 'bg-gradient-to-br from-blue-600 to-violet-600 text-white shadow-lg' : 'text-muted hover:text-main'}`}>
             {t.icon} {t.label}
-            <span className="px-1.5 py-0.5 rounded-md text-[10px]"
-              style={{ background: tab === t.key ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.03)' }}>
+            <span className={`px-2 py-0.5 rounded-lg text-[9px] ${tab === t.key ? 'bg-white/20' : 'bg-slate-500/10'}`}>
               {t.count}
             </span>
           </button>
         ))}
       </div>
 
-      {/* Resumes */}
-      {tab === 'resumes' && (
-        <div className="space-y-2" style={{ animation: 'slideUp 0.3s ease' }}>
-          {resumes.length === 0 ? (
-            <EmptyState icon={<FiFileText className="w-6 h-6 text-slate-700" />} text="No resumes uploaded yet" link="/analyze" linkText="Upload Resume" />
+      {/* Lists */}
+      <div className="grid gap-3">
+        {tab === 'resumes' ? (
+          resumes.length === 0 ? (
+            <EmptyState icon={<FiFileText className="w-8 h-8 text-muted" />} text="Repository is currently empty." link="/analyze" linkText="Import Resume" />
           ) : resumes.map(r => (
-            <div key={r._id} className="flex items-center justify-between p-3.5 rounded-xl transition-all duration-200 group"
-              style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(59,130,246,0.12)'; e.currentTarget.style.background = 'rgba(59,130,246,0.02)' }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.04)'; e.currentTarget.style.background = 'rgba(255,255,255,0.02)' }}>
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-                  style={{ background: 'rgba(59,130,246,0.08)' }}>
-                  <FiFileText className="text-blue-400 w-4 h-4" />
+            <div key={r._id} className="flex items-center justify-between p-5 rounded-3xl transition-all duration-300 hover:border-blue-500/40 border border-main bg-card shadow-sm hover:shadow-xl hover:-translate-y-1">
+              <div className="flex items-center gap-5 min-w-0">
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 bg-blue-500/5 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                  <FiFileText className="w-6 h-6" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-white truncate">{r.fileName}</p>
-                  <div className="flex items-center gap-2 text-xs text-slate-600 mt-0.5">
-                    <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold"
-                      style={{ background: 'rgba(99,102,241,0.1)', color: '#818cf8' }}>v{r.version}</span>
-                    <span>{new Date(r.createdAt).toLocaleDateString()}</span>
+                  <p className="text-base font-black text-main truncate max-w-xs">{r.fileName}</p>
+                  <div className="flex items-center gap-3 text-[10px] font-bold text-muted mt-1 uppercase tracking-widest">
+                    <span className="bg-blue-500/10 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-lg">v{r.version}</span>
+                    <span>Modified {new Date(r.createdAt).toLocaleDateString()}</span>
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-2.5 shrink-0">
-                <span className="text-base font-bold" style={{ color: scoreHex(r.atsScore.total) }}>{r.atsScore.total}%</span>
+              <div className="flex items-center gap-6 shrink-0">
+                <div className="text-right">
+                   <p className="text-[9px] font-black text-muted uppercase tracking-widest mb-0.5">ATS Score</p>
+                   <p className={`text-xl font-black`} style={{ color: scoreHex(r.atsScore.total) }}>{r.atsScore.total}%</p>
+                </div>
                 <button onClick={() => deleteResume(r._id)}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-700 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200"
-                  style={{ border: '1px solid rgba(255,255,255,0.04)' }}>
-                  <FiTrash2 className="w-3.5 h-3.5" />
+                  className="w-10 h-10 rounded-xl flex items-center justify-center text-muted hover:text-red-500 hover:bg-red-500/10 transition-all border border-main">
+                  <FiTrash2 className="w-4 h-4" />
                 </button>
               </div>
             </div>
-          ))}
-        </div>
-      )}
-
-      {/* Analyses */}
-      {tab === 'analyses' && (
-        <div className="space-y-2" style={{ animation: 'slideUp 0.3s ease' }}>
-          {analyses.length === 0 ? (
-            <EmptyState icon={<FiBarChart2 className="w-6 h-6 text-slate-700" />} text="No analyses run yet" link="/analyze" linkText="Run Analysis" />
+          ))
+        ) : (
+          analyses.length === 0 ? (
+            <EmptyState icon={<FiBarChart2 className="w-8 h-8 text-muted" />} text="No diagnostic reports found." link="/analyze" linkText="Execute Analysis" />
           ) : analyses.map(a => (
-            <div key={a._id} className="flex items-center justify-between p-3.5 rounded-xl transition-all duration-200 group"
-              style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(139,92,246,0.12)'; e.currentTarget.style.background = 'rgba(139,92,246,0.02)' }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.04)'; e.currentTarget.style.background = 'rgba(255,255,255,0.02)' }}>
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-                  style={{ background: 'rgba(139,92,246,0.08)' }}>
-                  <FiBarChart2 className="text-violet-400 w-4 h-4" />
+            <div key={a._id} className="flex items-center justify-between p-5 rounded-3xl transition-all duration-300 hover:border-violet-500/40 border border-main bg-card shadow-sm hover:shadow-xl hover:-translate-y-1">
+              <div className="flex items-center gap-5 min-w-0">
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 bg-violet-500/5 text-violet-600 dark:text-violet-400 border border-violet-500/20">
+                  <FiBarChart2 className="w-6 h-6" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-white truncate">{a.jobTitle || 'Job Analysis'}</p>
-                  <div className="flex items-center gap-2 text-xs text-slate-600 mt-0.5">
-                    <span className="truncate max-w-[120px]">{a.resumeId?.fileName || 'Resume'}</span>
+                  <p className="text-base font-black text-main truncate max-w-xs">{a.jobTitle || 'Analysis Diagnostic'}</p>
+                  <div className="flex items-center gap-3 text-[10px] font-bold text-muted mt-1 uppercase tracking-widest">
+                    <span className="truncate max-w-[150px]">{a.resumeId?.fileName || 'Source Document'}</span>
                     <span>{new Date(a.createdAt).toLocaleDateString()}</span>
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <span className="text-base font-bold" style={{ color: scoreHex(a.matchScore) }}>{a.matchScore}%</span>
-                <Link to={`/analysis/${a._id}`}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-700 hover:text-blue-400 hover:bg-blue-500/10 transition-all duration-200"
-                  style={{ border: '1px solid rgba(255,255,255,0.04)' }}>
-                  <FiArrowRight className="w-3.5 h-3.5" />
-                </Link>
-                <button onClick={() => deleteAnalysis(a._id)}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-700 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200"
-                  style={{ border: '1px solid rgba(255,255,255,0.04)' }}>
-                  <FiTrash2 className="w-3.5 h-3.5" />
-                </button>
+              <div className="flex items-center gap-4 shrink-0">
+                <div className="text-right">
+                   <p className="text-[9px] font-black text-muted uppercase tracking-widest mb-0.5">Match Precision</p>
+                   <p className={`text-xl font-black`} style={{ color: scoreHex(a.matchScore) }}>{a.matchScore}%</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Link to={`/analysis/${a._id}`}
+                    className="w-10 h-10 rounded-xl flex items-center justify-center text-muted hover:text-blue-600 hover:bg-blue-500/10 transition-all border border-main">
+                    <FiArrowRight className="w-5 h-5" />
+                  </Link>
+                  <button onClick={() => deleteAnalysis(a._id)}
+                    className="w-10 h-10 rounded-xl flex items-center justify-center text-muted hover:text-red-500 hover:bg-red-500/10 transition-all border border-main">
+                    <FiTrash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </div>
-          ))}
-        </div>
-      )}
+          ))
+        )}
+      </div>
     </div>
   )
 }
 
 function EmptyState({ icon, text, link, linkText }) {
   return (
-    <div className="flex flex-col items-center justify-center py-14 text-center gap-3">
-      <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.03)' }}>
+    <div className="card text-center py-20 flex flex-col items-center gap-5 border-dashed">
+      <div className="w-16 h-16 rounded-3xl flex items-center justify-center bg-app/50 border border-main">
         {icon}
       </div>
-      <p className="text-slate-400 font-medium text-sm">{text}</p>
-      <Link to={link} className="btn-primary text-sm py-2 px-5 mt-1">
-        <span>{linkText}</span> <FiArrowRight className="w-3.5 h-3.5" />
+      <div>
+        <p className="text-main font-black text-xl mb-2">{text}</p>
+        <p className="text-muted font-bold text-sm">Start an analysis to generate data visualization. Diagnostic records will appear here.</p>
+      </div>
+      <Link to={link} className="btn-primary py-4 px-10 text-base mt-4">
+        <span>{linkText}</span> <FiZap className="w-4 h-4" />
       </Link>
     </div>
   )
 }
 
 function scoreHex(score) {
-  if (score >= 70) return '#22c55e'
-  if (score >= 40) return '#eab308'
+  if (score >= 70) return '#10b981'
+  if (score >= 40) return '#f59e0b'
   return '#ef4444'
 }

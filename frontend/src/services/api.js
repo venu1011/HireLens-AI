@@ -48,6 +48,9 @@ export const analysisAPI = {
   getDiff: (id) => API.get(`/analysis/${id}/diff`),
   optimize: (id) => API.post(`/analysis/${id}/optimize`),
   downloadPDF: (id, data) => API.post(`/analysis/${id}/download-pdf`, data, { responseType: 'blob' }),
+  generateCoverLetter: (id) => API.post(`/analysis/${id}/cover-letter`),
+  interviewPrep: (id) => API.post(`/analysis/${id}/interview-prep`),
+  updateRoadmapStatus: (id, skillId, data) => API.patch(`/analysis/${id}/roadmap/${skillId}`, data),
 }
 
 export default API

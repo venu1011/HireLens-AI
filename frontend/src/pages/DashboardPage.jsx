@@ -39,23 +39,23 @@ export default function DashboardPage() {
             {user.name.charAt(0).toUpperCase()}
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-white">
+            <h1 className="text-2xl font-bold text-main">
               Welcome, <span className="text-gradient">{user.name.split(' ')[0]}</span>
             </h1>
-            <p className="text-slate-600 text-sm">Your resume intelligence dashboard</p>
+            <p className="text-muted text-sm">Your resume intelligence dashboard</p>
           </div>
         </div>
       </motion.div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
         {[
-          { icon: <FiFileText className="w-4 h-4" />, label: 'Resumes', value: resumes.length, color: '#3b82f6' },
-          { icon: <FiBarChart2 className="w-4 h-4" />, label: 'Analyses', value: analyses.length, color: '#8b5cf6' },
-          { icon: <FiTrendingUp className="w-4 h-4" />, label: 'Avg ATS', value: `${avgATS}%`, color: '#10b981' },
-          { icon: <FiZap className="w-4 h-4" />, label: 'Best Match', value: analyses.length ? `${Math.max(...analyses.map(a => a.matchScore))}%` : '—', color: '#f59e0b' },
+          { icon: <FiFileText className="w-5 h-5" />, label: 'Resumes', value: resumes.length, color: '#3b82f6' },
+          { icon: <FiBarChart2 className="w-5 h-5" />, label: 'Analyses', value: analyses.length, color: '#8b5cf6' },
+          { icon: <FiTrendingUp className="w-5 h-5" />, label: 'Avg ATS', value: `${avgATS}%`, color: '#10b981' },
+          { icon: <FiZap className="w-5 h-5" />, label: 'Best Match', value: analyses.length ? `${Math.max(...analyses.map(a => a.matchScore))}%` : '—', color: '#f59e0b' },
         ].map((s, i) => (
-          <motion.div key={s.label} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.08 * i }}>
+          <motion.div key={s.label} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.08 * i }} className="stat-card">
             <StatCard {...s} />
           </motion.div>
         ))}
@@ -172,14 +172,13 @@ export default function DashboardPage() {
 
 function StatCard({ icon, label, value, color }) {
   return (
-    <div className="rounded-2xl p-4 transition-all duration-300 hover:-translate-y-1"
-      style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}>
-      <div className="w-8 h-8 rounded-lg flex items-center justify-center mb-3"
+    <div className="group cursor-default">
+      <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110"
         style={{ background: `${color}10`, color }}>
         {icon}
       </div>
-      <div className="text-xl font-bold text-white">{value}</div>
-      <div className="text-slate-600 text-xs mt-0.5 font-medium">{label}</div>
+      <div className="text-2xl font-black text-main">{value}</div>
+      <div className="text-muted text-xs mt-1 font-bold uppercase tracking-widest">{label}</div>
     </div>
   )
 }

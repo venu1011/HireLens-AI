@@ -12,7 +12,7 @@ connectDB();
 
 // Middleware
 app.use(cors({
-  origin: "https://hire-lens-ai-three.vercel.app",
+  origin: [process.env.CLIENT_URL || "http://localhost:5173", "https://hire-lens-ai-three.vercel.app"],
   credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));

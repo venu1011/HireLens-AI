@@ -1,4 +1,4 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const OpenAI = require('openai');
 
 const WEAK_VERBS = ['worked on', 'helped with', 'was responsible for', 'did', 'made', 'used', 'assisted'];
 
@@ -101,11 +101,13 @@ const generateSuggestions = (rawText, structuredData, missingSkills) => {
 };
 
 /**
- * Google Gemini-powered suggestion generator
+ * NVIDIA NIM-powered suggestion generator
  */
 const generateAISuggestions = async (resumeText, jobDescription, missingSkills) => {
-  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+  const nvidiya = new OpenAI({
+    apiKey: process.env.NVIDIA_API_KEY,
+    baseURL: 'https://integrate.api.nvidia.com/v1',
+  });
 
   const prompt = `You are a professional resume coach and ATS expert.
 
@@ -126,10 +128,18 @@ Focus on:
 5. Skills to highlight or add
 
 Return a JSON array of exactly 5 improvement suggestion strings. Example format:
-["suggestion 1", "suggestion 2", "suggestion 3", "suggestion 4", "suggestion 5"]`;
+["suggestion 1", "suggestion 2", "suggestion 3", "suggestion 4", "suggestion 5"]
+Return ONLY the JSON array. Do not use Markdown formatting like **bold** in the suggestions.`;
 
-  const result = await model.generateContent(prompt);
-  const content = result.response.text();
+  const completion = await nvidiya.chat.completions.create({
+    model: process.env.NVIDIA_MODEL || "meta/llama-3.1-8b-instruct",
+    messages: [{ "role": "user", "content": prompt }],
+    temperature: 0.2,
+    top_p: 0.7,
+    max_tokens: 1024,
+  });
+
+  const content = completion.choices[0].message.content;
 
   try {
     const jsonMatch = content.match(/\[[\s\S]*\]/);
@@ -141,11 +151,13 @@ Return a JSON array of exactly 5 improvement suggestion strings. Example format:
 };
 
 /**
- * Rewrite a single bullet point using Gemini
+ * Rewrite a single bullet point using NVIDIA NIM
  */
 const rewriteBullet = async (bulletText, context) => {
-  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+  const nvidiya = new OpenAI({
+    apiKey: process.env.NVIDIA_API_KEY,
+    baseURL: 'https://integrate.api.nvidia.com/v1',
+  });
 
   const prompt = `Rewrite this resume bullet point to be more impactful, specific, and quantified.
 Use strong action verbs and add estimated impact if not provided.
@@ -155,8 +167,15 @@ Original: "${bulletText}"
 
 Return only the improved bullet point, nothing else.`;
 
-  const result = await model.generateContent(prompt);
-  return result.response.text().trim();
+  const completion = await nvidiya.chat.completions.create({
+    model: process.env.NVIDIA_MODEL || "meta/llama-3.1-8b-instruct",
+    messages: [{ "role": "user", "content": prompt }],
+    temperature: 0.2,
+    top_p: 0.7,
+    max_tokens: 256,
+  });
+
+  return completion.choices[0].message.content.trim();
 };
 
 module.exports = generateSuggestions;

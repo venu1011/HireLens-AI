@@ -44,7 +44,8 @@ const AnalysisSchema = new mongoose.Schema({
       level: { type: String, enum: ['beginner', 'intermediate', 'advanced'], default: 'beginner' },
       topics: [String],
       resources: [String],
-      estimatedTime: String
+      estimatedTime: String,
+      status: { type: String, enum: ['pending', 'in-progress', 'learned'], default: 'pending' }
     }
   ],
   createdAt: {

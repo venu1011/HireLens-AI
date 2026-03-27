@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { analysisAPI } from '../services/api'
-import { FiArrowLeft, FiCheckCircle, FiXCircle, FiAlertCircle, FiBookOpen, FiZap, FiClock, FiBarChart2, FiCpu, FiTarget, FiTrendingUp, FiAward, FiShield, FiEdit3, FiUser, FiLayout, FiHash, FiFeather, FiPieChart, FiLayers, FiStar, FiTerminal, FiCrosshair, FiRefreshCw, FiColumns, FiDownload } from 'react-icons/fi'
+import { FiArrowLeft, FiCheckCircle, FiXCircle, FiAlertCircle, FiBookOpen, FiZap, FiClock, FiBarChart2, FiCpu, FiTarget, FiTrendingUp, FiAward, FiShield, FiEdit3, FiUser, FiLayout, FiHash, FiFeather, FiPieChart, FiLayers, FiStar, FiTerminal, FiCrosshair, FiRefreshCw, FiColumns, FiDownload, FiFileText, FiInfo } from 'react-icons/fi'
 import SkillMatchChart from '../components/Charts/SkillMatchChart'
 import RadarMatchChart from '../components/Charts/RadarMatchChart'
 
@@ -15,7 +15,12 @@ export default function AnalysisResultPage() {
   const [diffLoading, setDiffLoading] = useState(false)
   const [optimizeData, setOptimizeData] = useState(null)
   const [optimizeLoading, setOptimizeLoading] = useState(false)
+  const [selectedTemplate, setSelectedTemplate] = useState('classic')
   const [pdfLoading, setPdfLoading] = useState(false)
+  const [coverLetterData, setCoverLetterData] = useState(null)
+  const [coverLetterLoading, setCoverLetterLoading] = useState(false)
+  const [interviewData, setInterviewData] = useState(null)
+  const [interviewLoading, setInterviewLoading] = useState(false)
 
   useEffect(() => {
     analysisAPI.getOne(id)
@@ -56,6 +61,8 @@ export default function AnalysisResultPage() {
     { id: 'suggestions', label: 'Suggestions', icon: <FiZap className="w-3.5 h-3.5" /> },
     { id: 'optimize', label: 'Optimize', icon: <FiCpu className="w-3.5 h-3.5" /> },
     { id: 'roadmap', label: 'Roadmap', icon: <FiBookOpen className="w-3.5 h-3.5" /> },
+    { id: 'coverletter', label: 'Cover Letter', icon: <FiFileText className="w-3.5 h-3.5" /> },
+    { id: 'interview', label: 'Interview Prep', icon: <FiAward className="w-3.5 h-3.5" /> },
   ]
 
   const handleOptimize = async () => {
@@ -63,9 +70,11 @@ export default function AnalysisResultPage() {
     setOptimizeLoading(true)
     try {
       const res = await analysisAPI.optimize(id)
-      setOptimizeData(res.data.optimized)
+      setOptimizeData(res.data)
+      toast.success('Resume optimized successfully!')
     } catch (err) {
       console.error('Optimize error:', err)
+      toast.error('Optimization failed. Please try again.')
     } finally {
       setOptimizeLoading(false)
     }
@@ -77,7 +86,8 @@ export default function AnalysisResultPage() {
     try {
       const res = await analysisAPI.downloadPDF(id, {
         text: optimizeData.text,
-        title: `${analysis.jobTitle || 'Optimized'} Resume`
+        title: `${analysis.jobTitle || 'Optimized'} Resume`,
+        template: selectedTemplate
       })
       const url = window.URL.createObjectURL(new Blob([res.data]))
       const link = document.createElement('a')
@@ -94,6 +104,32 @@ export default function AnalysisResultPage() {
     }
   }
 
+  const handleGenerateCoverLetter = async () => {
+    if (coverLetterLoading) return
+    setCoverLetterLoading(true)
+    try {
+      const res = await analysisAPI.generateCoverLetter(id)
+      setCoverLetterData(res.data.coverLetter)
+    } catch (err) {
+      console.error('Cover letter error:', err)
+    } finally {
+      setCoverLetterLoading(false)
+    }
+  }
+
+  const handleGenerateInterviewPrep = async () => {
+    if (interviewLoading) return
+    setInterviewLoading(true)
+    try {
+      const res = await analysisAPI.interviewPrep(id)
+      setInterviewData(res.data.questions)
+    } catch (err) {
+      console.error('Interview prep error:', err)
+    } finally {
+      setInterviewLoading(false)
+    }
+  }
+
   const scoreHex = (s) => s >= 70 ? '#22c55e' : s >= 40 ? '#eab308' : '#ef4444'
 
   return (
@@ -106,8 +142,8 @@ export default function AnalysisResultPage() {
           <FiArrowLeft className="w-4 h-4 text-slate-500" />
         </Link>
         <div>
-          <h1 className="text-xl font-bold text-white">{analysis.jobTitle || 'Analysis Result'}</h1>
-          <p className="text-slate-600 text-xs mt-0.5">{new Date(analysis.createdAt).toLocaleString()}</p>
+          <h1 className="text-xl font-bold text-main">{analysis.jobTitle || 'Analysis Result'}</h1>
+          <p className="text-muted text-xs mt-0.5">{new Date(analysis.createdAt).toLocaleString()}</p>
         </div>
       </div>
 
@@ -119,10 +155,9 @@ export default function AnalysisResultPage() {
           { label: 'Matched', value: matchedSkills.length, color: '#22c55e' },
           { label: 'Missing', value: missingSkills.length, color: '#ef4444' },
         ].map((c, i) => (
-          <div key={i} className="rounded-2xl p-4 text-center transition-all duration-300 hover:-translate-y-0.5"
-            style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}>
+          <div key={i} className="card p-4 text-center transition-all duration-300 hover:-translate-y-0.5">
             <div className="text-2xl font-bold" style={{ color: c.color }}>{c.value}</div>
-            <div className="text-slate-600 text-xs mt-1 font-medium">{c.label}</div>
+            <div className="text-muted text-xs mt-1 font-medium">{c.label}</div>
           </div>
         ))}
       </div>
@@ -132,12 +167,7 @@ export default function AnalysisResultPage() {
         style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}>
         {tabs.map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium transition-all duration-200 whitespace-nowrap flex-1 justify-center"
-            style={activeTab === tab.id ? {
-              background: 'linear-gradient(135deg,rgba(59,130,246,0.15),rgba(124,58,237,0.1))',
-              color: '#fff',
-              border: '1px solid rgba(59,130,246,0.2)',
-            } : { color: 'rgba(255,255,255,0.3)' }}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium transition-all duration-200 whitespace-nowrap flex-1 justify-center ${activeTab === tab.id ? 'bg-blue-500/10 text-blue-500 border border-blue-500/20' : 'text-muted hover:text-main'}`}
           >{tab.icon} {tab.label}</button>
         ))}
       </div>
@@ -362,10 +392,10 @@ export default function AnalysisResultPage() {
                   </div>
                   <div>
                     <h3 className="text-base font-bold text-white flex items-center gap-2">
-                      Gemini AI Insights
+                      NVIDIA NIM Insights
                       <span className="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full"
                         style={{ background: 'linear-gradient(135deg, rgba(59,130,246,0.2), rgba(124,58,237,0.2))', color: '#a78bfa', border: '1px solid rgba(124,58,237,0.2)' }}>
-                        Powered by AI
+                        Powered by NVIDIA AI
                       </span>
                     </h3>
                     <p className="text-slate-500 text-xs mt-1 leading-relaxed">
@@ -436,7 +466,7 @@ export default function AnalysisResultPage() {
                 style={{ background: 'rgba(99,102,241,0.03)', border: '1px solid rgba(99,102,241,0.08)' }}>
                 <div className="flex items-center gap-2 text-xs text-slate-500">
                   <FiTerminal className="w-3.5 h-3.5 text-indigo-400" />
-                  <span>Generated by <strong className="text-indigo-400">Gemini 2.5 Flash</strong></span>
+                  <span>Generated by <strong className="text-indigo-400">NVIDIA NIM (Llama 3.1)</strong></span>
                 </div>
                 <Link to="/analyze" className="text-[10px] font-semibold uppercase tracking-wider text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-1">
                   <FiRefreshCw className="w-3 h-3" /> Re-analyze
@@ -549,7 +579,7 @@ export default function AnalysisResultPage() {
               </div>
               <div className="flex-1">
                 <p className="text-xs text-slate-400"><strong className="text-indigo-400">AI Suggestions</strong> were not enabled for this analysis.</p>
-                <p className="text-[11px] text-slate-600 mt-0.5">Re-run with the AI toggle on for 5 personalized Gemini-powered insights.</p>
+                <p className="text-[11px] text-slate-600 mt-0.5">Re-run with the AI toggle on for 5 personalized NVIDIA-powered insights.</p>
               </div>
               <Link to="/analyze" className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 transition-colors whitespace-nowrap flex items-center gap-1">
                 Try Now <FiZap className="w-3 h-3" />
@@ -583,7 +613,7 @@ export default function AnalysisResultPage() {
               </motion.div>
               <h3 className="text-xl font-bold text-white mb-2">Auto-Optimize with AI</h3>
               <p className="text-slate-500 text-sm max-w-md mx-auto mb-8 leading-relaxed">
-                Gemini AI will rewrite your resume to better match this job — stronger bullets,
+                NVIDIA NIM AI will rewrite your resume to better match this job — stronger bullets,
                 targeted keywords, optimized structure. Your existing experience stays truthful.
               </p>
               <button onClick={handleOptimize} disabled={optimizeLoading}
@@ -591,7 +621,7 @@ export default function AnalysisResultPage() {
                 {optimizeLoading ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full" style={{ animation: 'spin 0.7s linear infinite' }} />
-                    <span>Optimizing with Gemini...</span>
+                    <span>Optimizing with NVIDIA...</span>
                   </>
                 ) : (
                   <><FiZap className="w-4 h-4" /> <span>Optimize My Resume</span></>
@@ -637,6 +667,29 @@ export default function AnalysisResultPage() {
                     )}
                   </button>
                 </div>
+
+                {/* Template Selector */}
+                <div className="mt-5 pt-5" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">Choose PDF Template</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { id: 'classic', label: 'Classic (ATS)', icon: <FiFileText /> },
+                      { id: 'modern', label: 'Modern Blue', icon: <FiZap /> },
+                      { id: 'minimalist', label: 'Minimalist', icon: <FiLayout /> },
+                    ].map(t => (
+                      <button key={t.id} onClick={() => setSelectedTemplate(t.id)}
+                        className="flex flex-col items-center gap-1.5 p-2.5 rounded-xl transition-all duration-200"
+                        style={{
+                          background: selectedTemplate === t.id ? 'rgba(59,130,246,0.1)' : 'rgba(255,255,255,0.01)',
+                          border: `1px solid ${selectedTemplate === t.id ? 'rgba(59,130,246,0.3)' : 'rgba(255,255,255,0.04)'}`,
+                          color: selectedTemplate === t.id ? '#60a5fa' : '#64748b'
+                        }}>
+                        <span className="text-lg">{t.icon}</span>
+                        <span className="text-[10px] font-semibold">{t.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
 
               {/* Changelog */}
@@ -675,6 +728,54 @@ export default function AnalysisResultPage() {
                 </div>
               )}
 
+              {/* Score Improvement Comparison (A/B) */}
+              {optimizeData.projectedScore && (
+                <div className="card overflow-hidden">
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                        <FiTrendingUp className="w-4 h-4 text-emerald-400" /> Score Improvement
+                      </h3>
+                      <p className="text-[10px] text-slate-500 mt-0.5">Projected ATS match after applying optimizations</p>
+                    </div>
+                    <div className="px-3 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 text-xs font-bold border border-emerald-500/20">
+                      +{Math.max(0, optimizeData.projectedScore - (optimizeData.originalScore || 0))}% Boost
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    <div className="relative pt-2">
+                      <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest mb-2 px-1">
+                        <span className="text-slate-500">Original Score</span>
+                        <span className="text-white">{optimizeData.originalScore || 0}%</span>
+                      </div>
+                      <div className="h-1.5 w-full bg-slate-500/10 rounded-full overflow-hidden">
+                        <motion.div initial={{ width: 0 }} animate={{ width: `${optimizeData.originalScore || 0}%` }} 
+                          className="h-full bg-slate-500/40 rounded-full" />
+                      </div>
+                    </div>
+
+                    <div className="relative">
+                      <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest mb-2 px-1">
+                        <span className="text-emerald-400">Projected Optimized Score</span>
+                        <span className="text-emerald-400 font-black">{optimizeData.projectedScore}%</span>
+                      </div>
+                      <div className="h-3 w-full bg-slate-500/10 rounded-full overflow-hidden p-0.5">
+                        <motion.div initial={{ width: 0 }} animate={{ width: `${optimizeData.projectedScore}%` }} 
+                          className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full shadow-[0_0_15px_rgba(16,185,129,0.3)]" />
+                      </div>
+                    </div>
+                    
+                    {optimizeData.impactSummary && (
+                      <div className="p-3 rounded-xl bg-blue-500/5 border border-blue-500/10 text-[11px] text-blue-300 italic flex items-start gap-2">
+                        <FiInfo className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                        <span>{optimizeData.impactSummary}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Optimized Resume Preview */}
               <div className="card">
                 <div className="flex items-center justify-between mb-4 pb-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
@@ -686,7 +787,7 @@ export default function AnalysisResultPage() {
                     <FiDownload className="w-3 h-3" /> Download
                   </button>
                 </div>
-                <div className="text-xs text-slate-300 leading-relaxed max-h-[500px] overflow-y-auto pr-2 whitespace-pre-wrap" style={{ scrollbarWidth: 'thin' }}>
+                <div className="text-xs text-slate-300 leading-relaxed max-h-[500px] overflow-y-auto pr-2 whitespace-pre-wrap font-serif" style={{ scrollbarWidth: 'thin' }}>
                   {optimizeData.text}
                 </div>
               </div>
@@ -695,7 +796,7 @@ export default function AnalysisResultPage() {
               <button onClick={handleOptimize} disabled={optimizeLoading}
                 className="btn-secondary py-2.5 px-6 text-sm mx-auto">
                 {optimizeLoading ? (
-                  <><div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full" style={{ animation: 'spin 0.7s linear infinite' }} /> Re-optimizing...</>
+                  <><div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Re-optimizing...</>
                 ) : (
                   <><FiRefreshCw className="w-3.5 h-3.5" /> Re-optimize</>
                 )}
@@ -707,49 +808,220 @@ export default function AnalysisResultPage() {
 
       {/* Roadmap */}
       {activeTab === 'roadmap' && (
-        <div className="space-y-3" style={{ animation: 'slideUp 0.3s ease' }}>
-          {roadmap?.length > 0 ? (
+        <div className="space-y-4" style={{ animation: 'slideUp 0.3s ease' }}>
+          {analysis.roadmap?.length > 0 ? (
             <>
-              <div className="rounded-xl p-3.5 text-xs flex items-center gap-2"
+              <div className="rounded-2xl p-4 text-xs flex items-center gap-3"
                 style={{ background: 'rgba(59,130,246,0.04)', border: '1px solid rgba(59,130,246,0.1)', color: '#93c5fd' }}>
-                <FiBookOpen className="w-3.5 h-3.5 shrink-0" />
-                <span><strong>Skill Gap Roadmap</strong> — Learn these {roadmap.length} skill{roadmap.length > 1 ? 's' : ''} to better match this role.</span>
+                <FiInfo className="w-4 h-4 shrink-0 text-blue-400" />
+                <span><strong>Interactive Roadmap</strong> — Track your growth by marking skills as <b>In-Progress</b> or <b>Learned</b>.</span>
               </div>
-              {roadmap.map((item, i) => (
-                <div key={i} className="card">
-                  <div className="flex items-start justify-between mb-4 gap-3">
-                    <div>
-                      <h3 className="text-base font-bold text-white">{item.skill}</h3>
-                      <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                        <span className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md ${getLevelBadge(item.level)}`}>{item.level}</span>
-                        <span className="flex items-center gap-1 text-slate-600 text-xs">
-                          <FiClock className="w-3 h-3" /> {item.estimatedTime}
-                        </span>
+              
+              <div className="grid gap-4">
+                {analysis.roadmap.map((item, i) => (
+                  <motion.div key={item._id || i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}
+                    className="card group overflow-hidden border-teal-500/10 hover:border-blue-500/30">
+                    <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2.5 mb-2">
+                          <h3 className="text-base font-bold text-main group-hover:text-blue-400 transition-colors uppercase tracking-tight">{item.skill}</h3>
+                          <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-md ${getLevelBadge(item.level)}`}>
+                            {item.level}
+                          </span>
+                        </div>
+                        
+                        <div className="flex items-center gap-4 text-xs text-slate-500 mb-4">
+                          <span className="flex items-center gap-1.5"><FiClock className="w-3.5 h-3.5" /> {item.estimatedTime}</span>
+                          <span className="flex items-center gap-1.5"><FiTarget className="w-3.5 h-3.5" /> {item.topics?.length || 0} Key Topics</span>
+                        </div>
+                      </div>
+
+                      {/* Status Toggle */}
+                      <div className="flex flex-col items-end gap-2 shrink-0">
+                        <div className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">Progress</div>
+                        <div className="flex bg-slate-500/5 p-1 rounded-xl border border-slate-500/10">
+                          {[
+                            { id: 'pending', label: 'Pending', icon: <FiClock /> },
+                            { id: 'in-progress', label: 'Learning', icon: <FiTrendingUp /> },
+                            { id: 'learned', label: 'Learned', icon: <FiCheckCircle /> }
+                          ].map(s => (
+                            <button key={s.id} 
+                              onClick={async () => {
+                                try {
+                                  const res = await analysisAPI.updateRoadmapStatus(id, item._id, { status: s.id })
+                                  const newRoadmap = [...analysis.roadmap]
+                                  newRoadmap[i].status = s.id
+                                  setAnalysis({ ...analysis, roadmap: newRoadmap })
+                                } catch (e) {
+                                  console.error(e)
+                                }
+                              }}
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${
+                                item.status === s.id 
+                                  ? (s.id === 'learned' ? 'bg-emerald-500 text-white' : s.id === 'in-progress' ? 'bg-blue-500 text-white' : 'bg-slate-500 text-white')
+                                  : 'text-slate-500 hover:text-slate-300'
+                              }`}>
+                              {s.icon} <span className="hidden lg:inline">{s.label}</span>
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     </div>
-                    <div className="text-2xl font-black shrink-0" style={{ color: 'rgba(255,255,255,0.04)' }}>#{i + 1}</div>
-                  </div>
 
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-[10px] font-semibold text-slate-600 uppercase tracking-wider mb-2">Topics</p>
-                      <ul className="space-y-1.5">
-                        {item.topics.map((t, j) => (
-                          <li key={j} className="flex items-start gap-2 text-xs text-slate-400">
-                            <span className="w-4 h-4 rounded flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5"
-                              style={{ background: 'rgba(59,130,246,0.1)', color: '#60a5fa' }}>{j + 1}</span>
-                            {t}
-                          </li>
-                        ))}
-                      </ul>
+                    <div className="grid md:grid-cols-2 gap-6 mt-6 pt-6 border-t border-white/[0.04]">
+                      <div>
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">Study Topics</p>
+                        <div className="flex flex-wrap gap-2">
+                          {item.topics.map((t, j) => (
+                            <span key={j} className="px-2 py-1 rounded-lg bg-slate-500/5 border border-slate-500/10 text-[11px] text-slate-400">
+                              {t}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">Learning Resources</p>
+                        <div className="space-y-2">
+                          {item.resources.map((r, j) => (
+                            <div key={j} className="flex items-center gap-2.5 text-xs text-blue-400/80 hover:text-blue-400 cursor-pointer transition-colors">
+                              <FiBookOpen className="w-3.5 h-3.5" />
+                              <span className="hover:underline">{r}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-20 text-slate-500 italic">No skill gap roadmap needed for this role.</div>
+          )}
+        </div>
+      )}
+
+      {/* Cover Letter */}
+      {activeTab === 'coverletter' && (
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} className="space-y-5">
+          {!coverLetterData ? (
+            <div className="text-center py-16">
+              <div className="w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 bg-blue-500/10 border border-blue-500/20">
+                <FiFileText className="w-9 h-9 text-blue-400" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">AI Cover Letter Generator</h3>
+              <p className="text-slate-500 text-sm max-w-md mx-auto mb-8 leading-relaxed">
+                Generate a professional, high-impact cover letter tailored specifically to this job description and your unique skills.
+              </p>
+              <button onClick={handleGenerateCoverLetter} disabled={coverLetterLoading}
+                className="btn-primary text-base px-10 py-3.5 mx-auto">
+                {coverLetterLoading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>Writing with NVIDIA AI...</span>
+                  </>
+                ) : (
+                  <><FiZap className="w-4 h-4" /> <span>Generate My Cover Letter</span></>
+                )}
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="card p-5 bg-gradient-to-r from-blue-500/10 via-violet-500/10 to-teal-500/10 border-blue-500/20">
+                <div className="flex items-center justify-between flex-wrap gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-11 h-11 rounded-xl flex items-center justify-center bg-gradient-to-br from-blue-500 to-violet-500 shadow-xl shadow-blue-500/20">
+                      <FiFileText className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <p className="text-[10px] font-semibold text-slate-600 uppercase tracking-wider mb-2">Resources</p>
+                      <h3 className="text-base font-bold text-white">Your Cover Letter</h3>
+                      <p className="text-slate-500 text-xs mt-0.5">ATS-Optimized & Personalized</p>
+                    </div>
+                  </div>
+                  <button onClick={() => {
+                    navigator.clipboard.writeText(coverLetterData)
+                    toast.success('Copied to clipboard!')
+                  }} className="btn-secondary py-2 px-6 text-sm">
+                    <FiLayers className="w-4 h-4" /> Copy Text
+                  </button>
+                </div>
+              </div>
+
+              <div className="card p-8 min-h-[500px] relative">
+                <div className="relative text-sm text-slate-300 leading-relaxed whitespace-pre-wrap font-serif italic max-w-2xl mx-auto">
+                  {coverLetterData}
+                </div>
+              </div>
+              <div className="flex justify-center pt-4">
+                <button onClick={handleGenerateCoverLetter} disabled={coverLetterLoading}
+                  className="text-xs font-semibold text-slate-600 hover:text-slate-400 transition-colors flex items-center gap-1.5">
+                  <FiRefreshCw className={`w-3.5 h-3.5 ${coverLetterLoading ? 'animate-spin' : ''}`} /> Regenerate
+                </button>
+              </div>
+            </div>
+          )}
+        </motion.div>
+      )}
+
+      {/* Interview Prep */}
+      {activeTab === 'interview' && (
+        <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4 }} className="space-y-6">
+          {!interviewData ? (
+            <div className="text-center py-16">
+              <div className="w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 bg-emerald-500/10 border border-emerald-500/20">
+                <FiAward className="w-9 h-9 text-emerald-400" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">AI Interview Preparator</h3>
+              <p className="text-slate-500 text-sm max-w-md mx-auto mb-8 leading-relaxed">
+                Unlock 10 tailored interview questions and expert answer strategies designed specifically for this role.
+              </p>
+              <button onClick={handleGenerateInterviewPrep} disabled={interviewLoading}
+                className="btn-primary text-base px-10 py-3.5 mx-auto !bg-emerald-600">
+                {interviewLoading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>Analyzing Job Role...</span>
+                  </>
+                ) : (
+                  <><FiCpu className="w-4 h-4" /> <span>Generate Interview Guide</span></>
+                )}
+              </button>
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="md:col-span-2 mb-2 flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-bold text-white">Interview Guide</h3>
+                  <p className="text-xs text-slate-500">10 predicted questions and winning strategies</p>
+                </div>
+                <button onClick={handleGenerateInterviewPrep} disabled={interviewLoading}
+                  className="text-xs font-semibold text-emerald-400 border border-emerald-500/20 bg-emerald-500/5 px-4 py-2 rounded-xl">
+                  <FiRefreshCw className={`w-3 h-3 ${interviewLoading ? 'animate-spin' : ''}`} /> Update
+                </button>
+              </div>
+
+              {interviewData.map((item, i) => (
+                <div key={i} className="card group hover:border-emerald-500/30">
+                  <div className="flex items-start justify-between mb-4">
+                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md ${
+                      item.type === 'Technical' ? 'bg-blue-500/10 text-blue-400' : 'bg-orange-500/10 text-orange-400'
+                    }`}>
+                      {item.type}
+                    </span>
+                    <span className="text-lg font-black text-slate-800">#{i + 1}</span>
+                  </div>
+                  <h4 className="text-sm font-bold text-white mb-4 leading-tight">{item.question}</h4>
+                  <div className="space-y-4 pt-4 border-t border-white/[0.04]">
+                    <div>
+                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Interviewer's Intent</p>
+                      <p className="text-xs text-slate-400 italic">"{item.intent}"</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Key Focus Points</p>
                       <ul className="space-y-1.5">
-                        {item.resources.map((r, j) => (
-                          <li key={j} className="flex items-start gap-2 text-xs text-slate-400">
-                            <FiBookOpen className="text-violet-400 w-3.5 h-3.5 shrink-0 mt-0.5" />
-                            {r}
+                        {(Array.isArray(item.answerOutline) ? item.answerOutline : [item.answerOutline]).map((bullet, j) => (
+                          <li key={j} className="text-[11px] text-slate-300 flex items-start gap-2">
+                            <span className="w-1 h-1 rounded-full bg-emerald-500 mt-1.5" /> {bullet}
                           </li>
                         ))}
                       </ul>
@@ -757,18 +1029,9 @@ export default function AnalysisResultPage() {
                   </div>
                 </div>
               ))}
-            </>
-          ) : (
-            <div className="text-center py-14">
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3"
-                style={{ background: 'rgba(34,197,94,0.06)' }}>
-                <FiCheckCircle className="w-6 h-6 text-green-400" />
-              </div>
-              <p className="text-slate-300 font-medium text-sm">No skill gaps found!</p>
-              <p className="text-slate-600 text-xs mt-1">Your skills match the job requirements well.</p>
             </div>
           )}
-        </div>
+        </motion.div>
       )}
     </div>
   )

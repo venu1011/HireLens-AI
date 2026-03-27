@@ -32,88 +32,86 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex" style={{ animation: 'fadeIn 0.4s ease' }}>
+    <div className="min-h-[calc(100vh-4rem)] flex bg-app">
       {/* Left brand panel */}
-      <div className="hidden lg:flex flex-col justify-between w-[45%] p-12 relative overflow-hidden"
-        style={{ background: 'rgba(255,255,255,0.01)', borderRight: '1px solid rgba(255,255,255,0.04)' }}>
-        <div className="absolute top-0 right-0 w-80 h-80 rounded-full blur-[120px] opacity-[0.06]" style={{ background: '#3b82f6' }} />
-        <div className="absolute bottom-0 left-0 w-60 h-60 rounded-full blur-[100px] opacity-[0.04]" style={{ background: '#7c3aed' }} />
-
+      <div className="hidden lg:flex flex-col justify-between w-[45%] p-16 relative overflow-hidden border-r border-main bg-white/[0.02]">
+        <div className="absolute top-0 right-0 w-96 h-96 rounded-full blur-[120px] opacity-[0.08]" style={{ background: '#3b82f6' }} />
+        
         <div className="relative">
-          <div className="flex items-center gap-2.5 mb-14">
-            <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#3b82f6,#7c3aed)', boxShadow: '0 0 16px rgba(59,130,246,0.3)' }}>
-              <FiZap className="text-white w-4 h-4" />
+          <div className="flex items-center gap-3 mb-16">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-gradient-to-br from-blue-600 to-violet-600 shadow-xl shadow-blue-500/20">
+              <FiZap className="text-white w-5 h-5" />
             </div>
-            <span className="font-extrabold text-lg"><span className="text-white">Hire</span><span className="text-gradient">Lens</span></span>
+            <span className="font-extrabold text-2xl tracking-tighter text-main">Hire<span className="text-gradient">Lens</span></span>
           </div>
 
-          <h2 className="text-3xl font-bold text-white mb-3 leading-snug">Your AI-powered<br />resume companion</h2>
-          <p className="text-slate-500 mb-10 text-sm leading-relaxed max-w-xs">Land more interviews with intelligent ATS analysis and personalized insights.</p>
+          <h2 className="text-5xl font-black text-main mb-6 leading-[1.1] tracking-tighter text-main">Your AI-powered<br />career strategist.</h2>
+          <p className="text-muted mb-12 text-lg leading-relaxed max-w-sm font-bold">Land more interviews with intelligent ATS analysis and role-specific optimization.</p>
 
-          <div className="space-y-3.5">
+          <div className="space-y-4">
             {PERKS.map((p, i) => (
-              <div key={i} className="flex items-center gap-3">
-                <div className="w-5 h-5 rounded-md flex items-center justify-center shrink-0" style={{ background: 'rgba(59,130,246,0.1)' }}>
-                  <FiCheck className="w-3 h-3 text-blue-400" />
+              <div key={i} className="flex items-center gap-4">
+                <div className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 bg-blue-500/10 border border-blue-500/20">
+                  <FiCheck className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                 </div>
-                <span className="text-slate-400 text-sm">{p}</span>
+                <span className="text-muted text-sm font-bold">{p}</span>
               </div>
             ))}
           </div>
         </div>
 
-        <p className="relative text-slate-700 text-xs">&copy; {new Date().getFullYear()} HireLens AI</p>
+        <p className="relative text-muted text-xs font-bold uppercase tracking-widest">&copy; {new Date().getFullYear()} Enterprise Edition</p>
       </div>
 
       {/* Right form */}
       <div className="flex-1 flex items-center justify-center px-6 py-12">
-        <div className="w-full max-w-md" style={{ animation: 'slideUp 0.4s ease' }}>
-          <div className="lg:hidden flex items-center gap-2 mb-8 justify-center">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#3b82f6,#7c3aed)' }}>
-              <FiZap className="text-white w-4 h-4" />
+        <div className="w-full max-w-md">
+          <div className="lg:hidden flex items-center gap-3 mb-10 justify-center">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-gradient-to-br from-blue-600 to-violet-600 shadow-lg shadow-blue-500/20">
+              <FiZap className="text-white w-5 h-5" />
             </div>
-            <span className="font-extrabold text-lg text-white">HireLens</span>
+            <span className="font-extrabold text-2xl text-main">HireLens</span>
           </div>
 
-          <div className="mb-8">
-            <h1 className="text-2xl font-bold text-white mb-1.5">Welcome back</h1>
-            <p className="text-slate-500 text-sm">Sign in to your account</p>
+          <div className="mb-10 text-center lg:text-left">
+            <h1 className="text-4xl font-black text-main mb-2 tracking-tighter">Welcome back.</h1>
+            <p className="text-muted font-bold text-base">Sign in to access your intelligence dashboard.</p>
           </div>
 
-          <div className="rounded-2xl p-7" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-            <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="card">
+            <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <label className="label">Email</label>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-muted mb-2 ml-1">Email Address</label>
                 <div className="relative">
-                  <FiMail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 w-4 h-4" />
-                  <input type="email" className="input-field pl-11" placeholder="you@example.com"
+                  <FiMail className="absolute left-4 top-1/2 -translate-y-1/2 text-muted w-4 h-4" />
+                  <input type="email" className="input-field pl-12 bg-app/50 font-bold text-main" placeholder="you@company.com"
                     value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required />
                 </div>
               </div>
 
               <div>
-                <label className="label">Password</label>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-muted mb-2 ml-1">Secure Password</label>
                 <div className="relative">
-                  <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 w-4 h-4" />
-                  <input type="password" className="input-field pl-11" placeholder="••••••••"
+                  <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-muted w-4 h-4" />
+                  <input type="password" className="input-field pl-12 bg-app/50 font-bold text-main" placeholder="••••••••"
                     value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} required />
                 </div>
               </div>
 
-              <button type="submit" className="btn-primary w-full py-3 text-base mt-2" disabled={loading}>
+              <button type="submit" className="btn-primary w-full py-4 text-lg mt-4" disabled={loading}>
                 {loading ? (
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full" style={{ animation: 'spin 0.6s linear infinite' }} />
+                  <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin" />
                 ) : (
-                  <><span>Sign In</span> <FiArrowRight /></>
+                  <><span>Sign In</span> <FiArrowRight className="w-5 h-5" /></>
                 )}
               </button>
             </form>
           </div>
 
-          <p className="text-center text-slate-500 mt-6 text-sm">
-            Don't have an account?{' '}
-            <Link to="/register" className="text-blue-400 hover:text-blue-300 font-semibold transition-colors">
-              Create one free
+          <p className="text-center text-muted mt-8 font-bold text-sm">
+            New to HireLens?{' '}
+            <Link to="/register" className="text-blue-600 dark:text-blue-400 hover:opacity-80 transition-colors">
+              Create an account free
             </Link>
           </p>
         </div>

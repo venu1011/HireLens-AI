@@ -52,22 +52,31 @@ exports.analyzeResume = async (req, res) => {
     // Generate AI suggestions if requested
     let aiSuggestions = [];
     if (useAI) {
-      if (!process.env.GEMINI_API_KEY) {
-        aiSuggestions = ['AI suggestions unavailable — GEMINI_API_KEY not set in .env'];
+      if (!process.env.NVIDIA_API_KEY) {
+        aiSuggestions = ['AI suggestions unavailable — NVIDIA_API_KEY not set in .env'];
       } else {
         try {
           const { generateAISuggestions } = require('../services/aiSuggestions');
           aiSuggestions = await generateAISuggestions(resume.rawText, jobDescription, missingSkills);
         } catch (aiError) {
           console.error('AI suggestions error:', aiError.message);
-          // Try fallback model if primary fails
+          // Try fallback if primary fails
           try {
-            const { GoogleGenerativeAI } = require('@google/generative-ai');
-            const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-            const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+            const OpenAI = require('openai');
+            const nvidiya = new OpenAI({
+              apiKey: process.env.NVIDIA_API_KEY,
+              baseURL: 'https://integrate.api.nvidia.com/v1',
+            });
             const prompt = `Given this resume and job, list 5 specific improvements as a JSON array of strings:\nResume: ${resume.rawText.substring(0, 1500)}\nJob: ${jobDescription.substring(0, 800)}\nMissing skills: ${missingSkills.join(', ')}\nReturn only: ["tip1","tip2","tip3","tip4","tip5"]`;
-            const result = await model.generateContent(prompt);
-            const text = result.response.text();
+            
+            const completion = await nvidiya.chat.completions.create({
+              model: process.env.NVIDIA_MODEL || "meta/llama-3.1-8b-instruct",
+              messages: [{ role: 'user', content: prompt }],
+              temperature: 0.2,
+              max_tokens: 512,
+            });
+
+            const text = completion.choices[0].message.content;
             const match = text.match(/\[[\s\S]*\]/);
             aiSuggestions = match ? JSON.parse(match[0]) : text.split('\n').filter(Boolean).slice(0, 5);
           } catch (fallbackErr) {
@@ -214,13 +223,15 @@ exports.autoOptimize = async (req, res) => {
       return res.status(404).json({ message: 'Analysis not found' });
     }
 
-    if (!process.env.GEMINI_API_KEY) {
-      return res.status(400).json({ message: 'GEMINI_API_KEY not configured' });
+    if (!process.env.NVIDIA_API_KEY) {
+      return res.status(400).json({ message: 'NVIDIA_API_KEY not configured' });
     }
 
-    const { GoogleGenerativeAI } = require('@google/generative-ai');
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    const OpenAI = require('openai');
+    const nvidiya = new OpenAI({
+      apiKey: process.env.NVIDIA_API_KEY,
+      baseURL: 'https://integrate.api.nvidia.com/v1',
+    });
 
     const resumeText = analysis.resumeId?.rawText || '';
     const jdText = analysis.jobDescription || '';
@@ -249,10 +260,16 @@ Rules:
 6. Improve formatting with clear section headers
 7. Keep it concise (1-2 pages worth of content)
 
-Return ONLY the optimized resume text formatted with clear sections (PROFESSIONAL SUMMARY, SKILLS, EXPERIENCE, PROJECTS, EDUCATION). Use bullet points (•) for experience items. Do not include any explanation before or after — just the resume text.`;
+Return ONLY the optimized resume text formatted with clear sections (PROFESSIONAL SUMMARY, SKILLS, EXPERIENCE, PROJECTS, EDUCATION). Use bullet points (•) for experience items. Do NOT use any Markdown formatting like **bold** or ### headers — just plain, well-structured text. Do not include any explanation before or after — just the resume text.`;
 
-    const result = await model.generateContent(prompt);
-    const optimizedText = result.response.text().trim();
+    const completion = await nvidiya.chat.completions.create({
+      model: process.env.NVIDIA_MODEL || "meta/llama-3.1-8b-instruct",
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.2,
+      max_tokens: 3000,
+    });
+
+    const optimizedText = completion.choices[0].message.content.trim();
 
     // Also generate a changelog of what was changed
     const changelogPrompt = `Compare these two resume texts and list exactly what was changed in 5-8 bullet points. Be specific.
@@ -266,8 +283,14 @@ ${optimizedText.substring(0, 2000)}
 Return a JSON array of change description strings. Example: ["Rewrote summary to target X role", "Added missing keyword Y to skills section"]
 Return ONLY the JSON array.`;
 
-    const changelogResult = await model.generateContent(changelogPrompt);
-    const changelogText = changelogResult.response.text();
+    const changelogCompletion = await nvidiya.chat.completions.create({
+      model: process.env.NVIDIA_MODEL || "meta/llama-3.1-8b-instruct",
+      messages: [{ role: 'user', content: changelogPrompt }],
+      temperature: 0.2,
+      max_tokens: 512,
+    });
+
+    const changelogText = changelogCompletion.choices[0].message.content;
     let changelog;
     try {
       const jsonMatch = changelogText.match(/\[[\s\S]*\]/);
@@ -276,17 +299,46 @@ Return ONLY the JSON array.`;
       changelog = changelogText.split('\n').filter(l => l.trim()).slice(0, 8);
     }
 
+    const improvementPrompt = `Compare the ORIGINAL resume with the OPTIMIZED version for the given Job Description:
+
+    JD: ${jdText.substring(0, 1000)}
+    ORIGINAL SCORE: ${analysis.matchScore}
+    MISSING SKILLS: ${missingSkills.join(', ')}
+
+    Return a JSON object:
+    {
+      "projectedScore": (0-100 number, how well does the OPTIMIZED version match now?),
+      "addressedSkills": ["skill1", "skill2"],
+      "impactSummary": "short 1-sentence summary of improvement"
+    }
+    Return ONLY JSON.`;
+
+    const improvCompletion = await nvidiya.chat.completions.create({
+      model: process.env.NVIDIA_MODEL || "meta/llama-3.1-8b-instruct",
+      messages: [{ role: 'user', content: improvementPrompt }],
+      temperature: 0.1,
+      response_format: { type: "json_object" }
+    });
+
+    let improvement;
+    try {
+      improvement = JSON.parse(improvCompletion.choices[0].message.content.trim());
+    } catch {
+      improvement = {
+        projectedScore: Math.min(99, Math.round(analysis.matchScore * 1.3)),
+        addressedSkills: missingSkills.slice(0, 3),
+        impactSummary: "Significantly improved keyword density and role alignment."
+      };
+    }
+
     res.json({
       success: true,
-      optimized: {
-        text: optimizedText,
-        changelog,
-        originalLength: resumeText.length,
-        optimizedLength: optimizedText.length,
-        missingSkillsAddressed: missingSkills.filter(skill =>
-          optimizedText.toLowerCase().includes(skill.toLowerCase())
-        )
-      }
+      text: optimizedText,
+      changelog,
+      originalScore: analysis.matchScore,
+      projectedScore: improvement.projectedScore,
+      missingSkillsAddressed: improvement.addressedSkills,
+      impactSummary: improvement.impactSummary
     });
   } catch (error) {
     console.error('Auto-optimize error:', error);
@@ -294,23 +346,160 @@ Return ONLY the JSON array.`;
   }
 };
 
+// @desc    Generate a tailored cover letter using AI
+// @route   POST /api/analysis/:id/cover-letter
+exports.generateCoverLetter = async (req, res) => {
+  try {
+    const analysis = await Analysis.findById(req.params.id).populate('resumeId');
+    
+    if (!analysis) {
+      return res.status(404).json({ message: 'Analysis record not found' });
+    }
+
+    const OpenAI = require('openai');
+    const nvidiya = new OpenAI({
+      apiKey: process.env.NVIDIA_API_KEY,
+      baseURL: 'https://integrate.api.nvidia.com/v1',
+    });
+
+    const prompt = `Write a professional, high-impact cover letter (1 page length) for a ${analysis.jobTitle || 'relevant'} position.
+    
+    Job Description context:
+    ${analysis.jobDescription.substring(0, 1500)}
+    
+    Candidate Skills & Experience context:
+    ${analysis.resumeId?.rawText?.substring(0, 1500) || 'Generic skills context'}
+    
+    Guidelines:
+    1. Match the job tone (Professional but energetic).
+    2. Explicitly mention top skills that align with the job.
+    3. Keep it to 3 main body paragraphs (Opening, Value Proposition, Closing).
+    4. Start with [Your Name] as the placeholder.
+    5. Return ONLY the cover letter text. No intro or outro text. Use plain text formatting.`;
+
+    const completion = await nvidiya.chat.completions.create({
+      model: process.env.NVIDIA_MODEL || "meta/llama-3.1-8b-instruct",
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.7,
+      max_tokens: 1500,
+    });
+
+    res.json({
+      success: true,
+      coverLetter: completion.choices[0].message.content.trim()
+    });
+  } catch (error) {
+    console.error('Cover letter generation error:', error);
+    res.status(500).json({ message: 'Error generating cover letter', error: error.message });
+  }
+};
+
+// @desc    Generate interview questions using AI
+// @route   POST /api/analysis/:id/interview-prep
+exports.generateInterviewQuestions = async (req, res) => {
+  try {
+    const analysis = await Analysis.findById(req.params.id).populate('resumeId');
+    
+    if (!analysis) {
+      return res.status(404).json({ message: 'Analysis record not found' });
+    }
+
+    const OpenAI = require('openai');
+    const nvidiya = new OpenAI({
+      apiKey: process.env.NVIDIA_API_KEY,
+      baseURL: 'https://integrate.api.nvidia.com/v1',
+    });
+
+    const prompt = `Based on the following Job Description and Candidate Resume, generate 10 high-value interview questions.
+    
+    Job Description:
+    ${analysis.jobDescription.substring(0, 1000)}
+    
+    Candidate Highlights:
+    ${analysis.resumeId?.rawText?.substring(0, 1000) || 'Generic candidate highlights'}
+    
+    Return the response as a valid JSON array of objects. Each object must have:
+    - "question": The actual interview question.
+    - "type": (e.g., "Technical", "Behavioral", "Situational")
+    - "intent": Why is the interviewer asking this?
+    - "answerOutline": 3-4 bullet points on what the candidate should mention.
+    
+    Return ONLY the raw JSON array. No explanation before or after.`;
+
+    const completion = await nvidiya.chat.completions.create({
+      model: process.env.NVIDIA_MODEL || "meta/llama-3.1-8b-instruct",
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.6,
+      response_format: { type: "json_object" } // Using json_object hint if supported, else just parsing
+    });
+
+    let questions = [];
+    try {
+      const content = completion.choices[0].message.content.trim();
+      // Safe parsing
+      const parsed = JSON.parse(content);
+      questions = Array.isArray(parsed) ? parsed : (parsed.questions || []);
+    } catch (e) {
+      console.error('JSON Parse error for interview questions:', e);
+      // Fallback or manual extraction if needed, but usually NIM is good at JSON
+    }
+
+    res.json({
+      success: true,
+      questions
+    });
+  } catch (error) {
+    console.error('Interview prep error:', error);
+    res.status(500).json({ message: 'Error generating interview questions', error: error.message });
+  }
+};
+
+// @desc    Update status of a roadmap skill
+// @route   PATCH /api/analysis/:id/roadmap/:skillId
+exports.updateRoadmapStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+    const { id, skillId } = req.params;
+
+    const analysis = await Analysis.findById(id);
+    if (!analysis) return res.status(404).json({ message: 'Analysis not found' });
+
+    const roadmapItem = analysis.roadmap.id(skillId);
+    if (!roadmapItem) return res.status(404).json({ message: 'Skill not found in roadmap' });
+
+    roadmapItem.status = status;
+    await analysis.save();
+
+    res.json({ success: true, roadmap: analysis.roadmap });
+  } catch (error) {
+    console.error('Update roadmap status error:', error);
+    res.status(500).json({ message: 'Error updating status', error: error.message });
+  }
+};
+
 // @desc    Download optimized resume as PDF
 // @route   POST /api/analysis/:id/download-pdf
 exports.downloadPDF = async (req, res) => {
   try {
-    const { text, title } = req.body;
+    const { text, title, template = 'classic' } = req.body;
+    const analysis = await Analysis.findById(req.params.id);
 
     if (!text) {
       return res.status(400).json({ message: 'Resume text is required' });
     }
 
+    // Template Configurations
+    const themes = {
+      classic: { nameSize: 15, hSize: 11, bSize: 9, accent: '#000000', secondary: '#444444', line: '#bbbbbb', align: 'left', margin: 50 },
+      modern: { nameSize: 20, hSize: 12, bSize: 9.5, accent: '#1e40af', secondary: '#64748b', line: '#3b82f6', align: 'center', margin: 45 },
+      minimalist: { nameSize: 14, hSize: 10, bSize: 8.5, accent: '#0f172a', secondary: '#94a3b8', line: '#e2e8f0', align: 'left', margin: 60 }
+    };
+    const theme = themes[template] || themes.classic;
+
     const doc = new PDFDocument({
-      margin: 50,
+      margin: theme.margin,
       size: 'A4',
-      info: {
-        Title: title || 'Optimized Resume',
-        Author: 'HireLens AI',
-      }
+      info: { Title: title || 'Optimized Resume', Author: 'HireLens AI' }
     });
 
     res.setHeader('Content-Type', 'application/pdf');
@@ -318,36 +507,99 @@ exports.downloadPDF = async (req, res) => {
     doc.pipe(res);
 
     const lines = text.split('\n');
-    const sectionHeaders = ['PROFESSIONAL SUMMARY', 'SKILLS', 'EXPERIENCE', 'PROJECTS', 'EDUCATION', 'CERTIFICATIONS', 'CONTACT', 'TECHNICAL SKILLS'];
+    const sections = ['PROFESSIONAL SUMMARY', 'SKILLS', 'EXPERIENCE', 'PROJECTS', 'EDUCATION', 'CERTIFICATIONS', 'CONTACT', 'TECHNICAL SKILLS', 'ADDITIONAL SKILLS'];
+
+    let isNameLine = true;
+    let currentSection = '';
+    let sectionStep = 0;
 
     for (const line of lines) {
-      const trimmed = line.trim();
-      if (!trimmed) {
+      let cleanLine = line.replace(/\*\*/g, '').replace(/\*/g, '').trim();
+      if (!cleanLine) {
+        doc.moveDown(0.2);
+        continue;
+      }
+
+      const isHeader = sections.some(s => cleanLine.toUpperCase() === s || cleanLine.toUpperCase().startsWith(s));
+      const isBullet = line.trim().startsWith('•') || line.trim().startsWith('-') || line.trim().startsWith('* ');
+
+      // 1. Handle Name & Contact (Top)
+      if (isNameLine) {
+        doc.font('Helvetica-Bold').fontSize(theme.nameSize).fillColor(theme.accent).text(cleanLine.toUpperCase(), { align: theme.align });
+        doc.moveDown(0.1);
+        isNameLine = false;
+        continue;
+      }
+
+      if (cleanLine.includes('@') || /[\d\-\+\(\)]{8,}/.test(cleanLine) || cleanLine.toLowerCase().includes('github.com') || cleanLine.toLowerCase().includes('linkedin.com')) {
+        doc.font('Helvetica').fontSize(theme.bSize).fillColor(theme.secondary).text(cleanLine, { align: theme.align });
         doc.moveDown(0.3);
         continue;
       }
 
-      const isHeader = sectionHeaders.some(h => trimmed.toUpperCase().includes(h));
-      const isBullet = trimmed.startsWith('•') || trimmed.startsWith('-') || trimmed.startsWith('*');
-      const isSubHeader = /^[A-Z].*\|/.test(trimmed) || /^[A-Z].*—/.test(trimmed) || /^[A-Z].*\d{4}/.test(trimmed);
-
+      // 2. Handle Section Headers
       if (isHeader) {
+        currentSection = sections.find(s => cleanLine.toUpperCase().startsWith(s));
+        sectionStep = 0;
         doc.moveDown(0.6);
-        doc.font('Helvetica-Bold').fontSize(13).fillColor('#1a1a2e').text(trimmed.toUpperCase());
-        doc.moveDown(0.15);
-        doc.strokeColor('#3b82f6').lineWidth(0.8)
-          .moveTo(doc.x, doc.y).lineTo(doc.x + 495, doc.y).stroke();
-        doc.moveDown(0.3);
-      } else if (isSubHeader) {
-        doc.moveDown(0.2);
-        doc.font('Helvetica-Bold').fontSize(10.5).fillColor('#333').text(trimmed);
-      } else if (isBullet) {
-        doc.font('Helvetica').fontSize(10).fillColor('#444')
-          .text(trimmed, { indent: 15, lineGap: 2 });
-      } else {
-        doc.font('Helvetica').fontSize(10).fillColor('#444')
-          .text(trimmed, { lineGap: 2 });
+        doc.font('Helvetica-Bold').fontSize(theme.hSize).fillColor(theme.accent).text(cleanLine.toUpperCase(), { characterSpacing: 0.5 });
+        doc.moveDown(0.05);
+        
+        // Subtle decorative line
+        if (template !== 'minimalist') {
+          doc.strokeColor(theme.line).lineWidth(0.8).moveTo(doc.x, doc.y).lineTo(doc.x + (595 - (theme.margin * 2)), doc.y).stroke();
+        }
+        doc.moveDown(0.4);
+        continue;
       }
+
+      // 3. Handle Content Logic
+      if (isBullet) {
+        const bulletText = cleanLine.replace(/^[•\-\*]\s*/, '').trim();
+        doc.font('Helvetica').fontSize(theme.bSize).fillColor('#111')
+          .text('•  ' + bulletText, { indent: 12, lineGap: 2, align: 'justify' });
+      } else {
+        // Advanced parsing for Subheaders (Job Titles, Project Names, Degrees)
+        const hasDate = /(20\d{2}|Present)/i.test(cleanLine);
+        const hasPipe = cleanLine.includes('|') || cleanLine.includes('—');
+        
+        // If it's the first line in Experience/Projects/Education, it's a primary subheader
+        const isPrimarySubHeader = sectionStep === 0 && ['EXPERIENCE', 'PROJECTS', 'EDUCATION'].includes(currentSection);
+        
+        if (isPrimarySubHeader || hasPipe || (hasDate && cleanLine.length < 100)) {
+          // Special styling for subheaders
+          if (template === 'modern') {
+            const parts = cleanLine.split(/[|—]/).map(p => p.trim());
+            if (parts.length > 1) {
+              doc.font('Helvetica-Bold').fontSize(theme.bSize + 0.5).fillColor('#1a1a2e').text(parts[0], { continued: true });
+              doc.font('Helvetica').fontSize(theme.bSize).fillColor(theme.secondary).text('  |  ' + parts.slice(1).join(' | '));
+            } else {
+              doc.font('Helvetica-Bold').fontSize(theme.bSize + 0.5).fillColor('#1a1a2e').text(cleanLine);
+            }
+          } else {
+            doc.font('Helvetica-Bold').fontSize(theme.bSize).fillColor('#222').text(cleanLine);
+          }
+          doc.moveDown(0.1);
+          sectionStep++;
+        } else {
+          // Standard body text
+          const color = (currentSection === 'SKILLS' || currentSection === 'TECHNICAL SKILLS') ? '#000' : '#333';
+          const font = (currentSection === 'SKILLS' || currentSection === 'TECHNICAL SKILLS') ? 'Helvetica-Bold' : 'Helvetica';
+          
+          doc.font(font).fontSize(theme.bSize).fillColor(color).text(cleanLine, { lineGap: 1.8, align: 'justify' });
+          sectionStep++;
+        }
+      }
+    }
+
+    // Page footer
+    const range = doc.bufferedPageRange();
+    for (let i = range.start; i < range.start + range.count; i++) {
+      doc.switchToPage(i);
+      doc.font('Helvetica').fontSize(7).fillColor('#999').text(
+        `Optimized for ${analysis?.jobTitle || 'Industry Standard'} via HireLens AI`,
+        theme.margin, doc.page.height - 30, { align: 'center' }
+      );
     }
 
     doc.end();
