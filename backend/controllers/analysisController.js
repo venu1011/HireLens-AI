@@ -413,10 +413,10 @@ exports.generateInterviewQuestions = async (req, res) => {
     const prompt = `Based on the following Job Description and Candidate Resume, generate 10 high-value interview questions.
     
     Job Description:
-    ${analysis.jobDescription.substring(0, 1000)}
+    ${(analysis.jobDescription || '').substring(0, 1200)}
     
     Candidate Highlights:
-    ${analysis.resumeId?.rawText?.substring(0, 1000) || 'Generic candidate highlights'}
+    ${(analysis.resumeId?.rawText || '').substring(0, 1200) || 'Strong candidate with relevant experience'}
     
     Return the response as a valid JSON array of objects. Each object must have:
     - "question": The actual interview question.
