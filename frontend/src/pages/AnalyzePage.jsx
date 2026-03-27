@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import { resumeAPI, analysisAPI } from '../services/api'
 import toast from 'react-hot-toast'
 import { FiUploadCloud, FiFileText, FiCheck, FiBriefcase, FiZap, FiArrowRight, FiArrowLeft, FiX, FiToggleLeft, FiToggleRight } from 'react-icons/fi'
