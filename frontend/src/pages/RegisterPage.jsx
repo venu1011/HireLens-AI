@@ -66,6 +66,13 @@ export default function RegisterPage() {
       {/* Right panel */}
       <div className="flex-1 flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-md">
+          <div className="lg:hidden flex items-center gap-3 mb-10 justify-center">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-gradient-to-br from-emerald-600 to-teal-600 shadow-lg shadow-emerald-500/20">
+              <FiZap className="text-white w-5 h-5" />
+            </div>
+            <span className="font-extrabold text-2xl text-main">HireLens</span>
+          </div>
+
           <div className="mb-10 text-center lg:text-left">
             <h1 className="text-4xl font-black text-main mb-2 tracking-tighter">Get started.</h1>
             <p className="text-muted font-bold text-base">Create your free account in seconds.</p>

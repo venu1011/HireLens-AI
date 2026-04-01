@@ -141,12 +141,14 @@ export default function HistoryPage() {
       {/* Modern Tabs */}
       <div className="flex gap-2 p-1.5 rounded-2xl mb-8 bg-app/50 border border-main">
         {[
-          { key: 'resumes', label: 'Resume Repository', count: resumes.length, icon: <FiFileText /> },
-          { key: 'analyses', label: 'Analysis History', count: analyses.length, icon: <FiBarChart2 /> },
+          { key: 'resumes', label: 'Resume Repository', shortLabel: 'Resumes', count: resumes.length, icon: <FiFileText /> },
+          { key: 'analyses', label: 'Analysis History', shortLabel: 'Analyses', count: analyses.length, icon: <FiBarChart2 /> },
         ].map(t => (
           <button key={t.key} onClick={() => setTab(t.key)}
-            className={`flex-1 flex items-center justify-center gap-3 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 ${tab === t.key ? 'bg-gradient-to-br from-blue-600 to-violet-600 text-white shadow-lg' : 'text-muted hover:text-main'}`}>
-            {t.icon} {t.label}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 ${tab === t.key ? 'bg-gradient-to-br from-blue-600 to-violet-600 text-white shadow-lg' : 'text-muted hover:text-main'}`}>
+            {t.icon}
+            <span className="hidden sm:inline">{t.label}</span>
+            <span className="sm:hidden">{t.shortLabel}</span>
             <span className={`px-2 py-0.5 rounded-lg text-[9px] ${tab === t.key ? 'bg-white/20' : 'bg-slate-500/10'}`}>
               {t.count}
             </span>
@@ -173,7 +175,7 @@ export default function HistoryPage() {
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-6 shrink-0">
+              <div className="flex items-center gap-3 sm:gap-6 shrink-0">
                 <div className="text-right">
                    <p className="text-[9px] font-black text-muted uppercase tracking-widest mb-0.5">ATS Score</p>
                    <p className={`text-xl font-black`} style={{ color: scoreHex(r.atsScore.total) }}>{r.atsScore.total}%</p>
@@ -202,7 +204,7 @@ export default function HistoryPage() {
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-4 shrink-0">
+              <div className="flex items-center gap-2 sm:gap-4 shrink-0">
                 <div className="text-right">
                    <p className="text-[9px] font-black text-muted uppercase tracking-widest mb-0.5">Match Precision</p>
                    <p className={`text-xl font-black`} style={{ color: scoreHex(a.matchScore) }}>{a.matchScore}%</p>

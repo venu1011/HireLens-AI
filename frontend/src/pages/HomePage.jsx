@@ -71,7 +71,7 @@ export default function HomePage() {
             </motion.div>
 
             <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-              className="text-6xl md:text-9xl font-black mb-8 leading-[0.88] tracking-tighter text-main">
+              className="text-5xl sm:text-6xl md:text-9xl font-black mb-8 leading-[0.88] tracking-tighter text-main">
               LAND YOUR <br />
               <span className="text-gradient">DREAM CAREER.</span>
             </motion.h1>
@@ -125,8 +125,8 @@ export default function HomePage() {
              {/* Dynamic Float Overlay */}
              <div className="absolute top-[40%] left-1/2 -translate-x-1/2 z-20 w-[90%] pointer-events-none">
                 <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 1, duration: 0.8 }}
-                  className="bg-white/80 dark:bg-white/5 backdrop-blur-3xl border border-white/20 dark:border-white/5 p-8 rounded-[3rem] shadow-3xl text-center max-w-md mx-auto">
-                    <div className="text-4xl font-black text-blue-600 dark:text-blue-400 mb-2">98.5%</div>
+                  className="bg-white/80 dark:bg-white/5 backdrop-blur-3xl border border-white/20 dark:border-white/5 p-5 sm:p-8 rounded-[2rem] sm:rounded-[3rem] shadow-3xl text-center max-w-md mx-auto">
+                    <div className="text-3xl sm:text-4xl font-black text-blue-600 dark:text-blue-400 mb-2">98.5%</div>
                     <div className="text-xs font-black uppercase tracking-widest text-muted">ATS Compliance Average</div>
                 </motion.div>
              </div>
@@ -180,19 +180,19 @@ export default function HomePage() {
       {/* --- CTA --- */}
       <section className="py-40 px-4">
         <motion.div initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }}
-          className="max-w-6xl mx-auto rounded-[4rem] p-16 md:p-28 text-center relative overflow-hidden bg-slate-950 shadow-3xl">
+          className="max-w-6xl mx-auto rounded-[2rem] sm:rounded-[4rem] p-10 sm:p-16 md:p-28 text-center relative overflow-hidden bg-slate-950 shadow-3xl">
           <div className="absolute inset-0 bg-gradient-to-br from-blue-600 to-indigo-900 opacity-90" />
           <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10" />
           
           <div className="relative z-10">
-            <h2 className="text-5xl md:text-8xl font-black text-white mb-10 tracking-tighter leading-tight">
+            <h2 className="text-4xl sm:text-5xl md:text-8xl font-black text-white mb-10 tracking-tighter leading-tight">
               YOUR CAREER <br />DESERVES BEST.
             </h2>
-            <p className="text-white/80 text-xl md:text-2xl max-w-xl mx-auto mb-14 font-bold">
+            <p className="text-white/80 text-lg sm:text-xl md:text-2xl max-w-xl mx-auto mb-14 font-bold">
               Join the elite circle of applicants bypassing ATS filters with AI.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-                <Link to="/register" className="bg-white text-blue-900 font-black py-5 px-14 rounded-3xl hover:scale-105 transition-all shadow-2xl text-xl">
+                <Link to="/register" className="bg-white text-blue-900 font-black py-4 sm:py-5 px-10 sm:px-14 rounded-3xl hover:scale-105 transition-all shadow-2xl text-lg sm:text-xl w-full sm:w-auto">
                   Get Started Free
                 </Link>
                 <div className="flex items-center gap-3 text-white font-black uppercase tracking-widest text-xs">

@@ -163,12 +163,12 @@ export default function AnalysisResultPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 p-1 rounded-xl mb-6 overflow-x-auto"
+      <div className="flex gap-1 p-1 rounded-xl mb-6 overflow-x-auto scrollbar-hide"
         style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}>
         {tabs.map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium transition-all duration-200 whitespace-nowrap flex-1 justify-center ${activeTab === tab.id ? 'bg-blue-500/10 text-blue-500 border border-blue-500/20' : 'text-muted hover:text-main'}`}
-          >{tab.icon} {tab.label}</button>
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 whitespace-nowrap shrink-0 justify-center ${activeTab === tab.id ? 'bg-blue-500/10 text-blue-500 border border-blue-500/20' : 'text-muted hover:text-main'}`}
+          >{tab.icon} <span className="hidden sm:inline">{tab.label}</span></button>
         ))}
       </div>
 
@@ -326,7 +326,7 @@ export default function AnalysisResultPage() {
               </div>
 
               {/* Stats bar */}
-              <div className="grid grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {[
                   { label: 'Matched', value: diffData.stats.matchedCount, color: '#22c55e' },
                   { label: 'Missing', value: diffData.stats.missingCount, color: '#ef4444' },
