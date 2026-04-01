@@ -130,7 +130,7 @@ export default function AnalyzePage() {
 
             {/* Dropzone */}
             <div
-              className={`rounded-[2rem] p-12 text-center cursor-pointer transition-all duration-300 border-2 border-dashed ${dragActive ? 'bg-blue-500/10 border-blue-500' : 'bg-app/30 border-main hover:border-blue-500/50'}`}
+              className={`rounded-[2rem] p-8 sm:p-12 text-center cursor-pointer transition-all duration-300 border-2 border-dashed ${dragActive ? 'bg-blue-500/10 border-blue-500' : 'bg-app/30 border-main hover:border-blue-500/50'}`}
               onDragEnter={handleDrag} onDragLeave={handleDrag} onDragOver={handleDrag}
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
@@ -246,17 +246,17 @@ export default function AnalyzePage() {
             </div>
 
             {/* AI toggle */}
-            <div className="rounded-[2rem] p-6 flex items-center justify-between bg-blue-500/5 border border-blue-500/20 mb-8">
-              <div className="flex items-center gap-4">
-                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-colors ${useAI ? 'bg-blue-600 text-white shadow-lg' : 'bg-slate-500/10 text-muted'}`}>
-                  <FiZap className="w-6 h-6" />
+            <div className="rounded-[2rem] p-4 sm:p-6 flex items-center justify-between gap-4 bg-blue-500/5 border border-blue-500/20 mb-8">
+              <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center shrink-0 transition-colors ${useAI ? 'bg-blue-600 text-white shadow-lg' : 'bg-slate-500/10 text-muted'}`}>
+                  <FiZap className="w-5 h-5 sm:w-6 sm:h-6" />
                 </div>
-                <div>
-                  <p className="text-base font-black text-main">AI-Guided Analysis</p>
+                <div className="min-w-0">
+                  <p className="text-sm sm:text-base font-black text-main">AI-Guided Analysis</p>
                   <p className="text-xs text-muted font-bold">Activates NVIDIA NIM for suggestion generation.</p>
                 </div>
               </div>
-              <button onClick={() => setUseAI(!useAI)} className="text-3xl transition-transform active:scale-90">
+              <button onClick={() => setUseAI(!useAI)} className="text-3xl transition-transform active:scale-90 shrink-0">
                 {useAI ? <FiToggleRight className="text-blue-600" /> : <FiToggleLeft className="text-muted" />}
               </button>
             </div>
