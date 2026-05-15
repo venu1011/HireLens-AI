@@ -7,7 +7,7 @@ console.log('Loaded NVIDIA_API_KEY:', process.env.NVIDIA_API_KEY ? '✅ Present'
 const test = async () => {
   try {
     const client = new OpenAI({
-      apiKey: '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',
+      apiKey: 'process.env.NVIDIA_API_KEY',
       baseURL: 'https://integrate.api.nvidia.com/v1',
     });
 
