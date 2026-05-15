@@ -11,15 +11,25 @@ export default function DashboardPage() {
   const [resumes, setResumes] = useState([])
   const [analyses, setAnalyses] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
   useEffect(() => {
-    Promise.all([resumeAPI.getAll(), analysisAPI.getAll()])
-      .then(([rRes, aRes]) => {
-        setResumes(rRes.data.resumes || [])
-        setAnalyses(aRes.data.analyses || [])
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false))
+    const fetchDashboard = () => {
+      setLoading(true)
+      setError('')
+      Promise.all([
+        resumeAPI.getAll({ page: 1, limit: 10 }),
+        analysisAPI.getAll({ page: 1, limit: 5 })
+      ])
+        .then(([rRes, aRes]) => {
+          setResumes(rRes.data.resumes || [])
+          setAnalyses(aRes.data.analyses || [])
+        })
+        .catch(() => setError('Unable to load dashboard data.'))
+        .finally(() => setLoading(false))
+    }
+
+    fetchDashboard()
   }, [])
 
   const latestResume = resumes[0]
@@ -28,6 +38,19 @@ export default function DashboardPage() {
     : 0
 
   if (loading) return <LoadingState />
+
+  if (error) {
+    return (
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="rounded-2xl p-6 border border-red-500/20 bg-red-500/5">
+          <p className="text-sm font-bold text-red-500 mb-4">{error}</p>
+          <button onClick={() => window.location.reload()} className="btn-secondary py-2 px-6 text-sm">
+            Retry
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

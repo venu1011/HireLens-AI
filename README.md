@@ -1,128 +1,223 @@
-# 🚀 HireLens AI — Executive Resume Intelligence Suite
+# HireLens AI
 
-HireLens AI is a premium, high-authority career platform that transforms generic resumes into job-winning documents. Powered by **NVIDIA NIM (Llama-3.1)** and a sophisticated **Multi-Dimension ATS Scoring Engine**, it provides deep-scan diagnostics, role-specific optimization, and executive-level PDF generation.
+HireLens AI is a full-stack resume intelligence platform that analyzes a resume against a target job description and produces actionable outputs such as ATS diagnostics, skill-gap roadmaps, AI suggestions, resume optimization, cover letters, interview preparation, and PDF export.
 
----
+This repository is structured as a production-style final-year project with separate frontend and backend apps.
 
-## ✨ Executive Highlights
+## Key Features
 
-- **NVIDIA NIM Powerhouse** — Driven by `meta/llama-3.1-8b-instruct` for superior semantic analysis and context-aware suggestions.
-- **High-Authority Design System** — A museum-grade UI/UX with **Plus Jakarta Sans** and **Outfit** typography.
-- **Universal Theme Engine** — Seamlessly switch between **Deep Obsidian (Dark)** and **Sophisticated Slate (Light)** modes with 100% legibility.
-- **5-Dimension ATS Diagnostics** — Precise scoring across Keywords, Sections, Action Verbs, Measurable Metrics, and Formatting.
-- **Multi-Template PDF Export** — Download your optimized resume in **Classic**, **Modern**, or **Minimalist** executive styles.
-- **Smart Skill Gap Roadmaps** — Personalized learning paths with curated resources to bridge the gap between your current profile and target job roles.
-- **Interview Strategy AI** — Automated generation of role-specific tactical interview prep kits.
+- Resume upload and parsing (PDF)
+- ATS scoring across 5 dimensions
+- Skill matching: matched, missing, and extra skills
+- AI-assisted resume suggestions (NVIDIA NIM endpoint)
+- Resume auto-optimization for target roles
+- Diff view between resume and job description
+- Cover letter and interview-prep generation
+- Learning roadmap generation for missing skills
+- Multi-template optimized resume PDF download
+- Analysis export as JSON
+- Authenticated user history (resumes and analyses)
 
----
+## Tech Stack
 
-## 🏗 Project Architecture
+### Frontend
+- React 18
+- Vite
+- Tailwind CSS
+- Framer Motion
+- Chart.js + react-chartjs-2
+- Axios
 
-```
-HIRELENS AI/
-├── backend/                # Node.js + Express + NVIDIA NIM
+### Backend
+- Node.js + Express
+- MongoDB + Mongoose
+- JWT authentication
+- Multer (PDF uploads)
+- PDFKit (PDF generation)
+- express-validator (request validation)
+- express-rate-limit (AI endpoint protection)
+
+### AI
+- NVIDIA-compatible OpenAI SDK integration
+- Default model: `meta/llama-3.1-8b-instruct`
+
+## Project Structure
+
+```text
+HireLens-AI/
+├── backend/
+│   ├── config/
+│   ├── controllers/
+│   ├── middleware/
+│   ├── models/
+│   ├── routes/
 │   ├── services/
-│   │   ├── aiSuggestions.js      # NVIDIA NIM (Llama-3.1) Integration
-│   │   ├── atsScorer.js          # Multi-dimension scoring logic
-│   │   ├── roadmapGenerator.js   # Automated learning path engine
-│   │   └── pdfGenerator.js       # Multi-template PDFKit engine
-│   └── ...
-└── frontend/               # React 18 + Vite + Tailwind + Framer Motion
-    ├── src/
-    │   ├── context/
-    │   │   ├── AuthContext.jsx   # JWT Authentication state
-    │   │   └── ThemeContext.jsx  # Advanced Light/Dark mode state
-    │   ├── pages/
-    │   │   ├── HomePage.jsx      # High-impact landing page
-    │   │   ├── DashboardPage.jsx # Career Command Center
-    │   │   └── AnalysisResultPage.jsx # Deep diagnostic results
-    │   └── index.css             # Variable-based Design System
+│   └── server.js
+├── frontend/
+│   ├── public/
+│   └── src/
+│       ├── components/
+│       ├── context/
+│       ├── pages/
+│       └── services/
+└── README.md
 ```
 
----
+## Architecture Overview
 
-## ⚙️ Modern Tech Stack
+1. User authenticates and uploads resume PDF.
+2. Backend parses resume text and extracts structured sections.
+3. ATS scorer computes weighted score and feedback.
+4. User submits job description for matching.
+5. Job analyzer extracts required/preferred skills and computes match score.
+6. Optional AI features generate optimization suggestions and outputs.
+7. Results are stored and available in history and export workflows.
 
-| Layer       | Technology                                                  |
-|-------------|-------------------------------------------------------------|
-| **Frontend**    | React 18, Vite, Tailwind CSS, Framer Motion, Chart.js      |
-| **Backend**     | Node.js, Express.js, PDFKit, Multer                        |
-| **AI / LLM**    | **NVIDIA NIM** (meta/llama-3.1-8b-instruct)               |
-| **Database**    | MongoDB Atlas (Mongoose ODM)                               |
-| **Auth**        | JWT (JSON Web Tokens), bcryptjs                            |
-| **Typography**  | Plus Jakarta Sans (Body), Outfit (Headings)                |
-| **UI Polish**   | react-hot-toast, react-icons (Feather), Lucide             |
+## ATS Scoring Model
 
----
+Total score: 100
 
-## 🧠 Diagnostic Engines
+- Keyword Match: 40
+- Section Completeness: 20
+- Action Verbs: 15
+- Measurable Metrics: 15
+- Formatting Rules: 10
 
-### 📊 ATS Scoring Model
-A 100-point diagnostic scale that mirrors high-end corporate filtering systems:
-- **Keyword Match (40 pts)**: Alias-aware skill detection (e.g., *React* ↔ *React.js*).
-- **Section Integrity (20 pts)**: Verification of Summary, Core Skills, Experience, and Education.
-- **Action Verbs (15 pts)**: Scoring based on 200+ high-impact professional verbs.
-- **Measurable Impact (15 pts)**: Detection of quantified achievements (%, $, numbers).
-- **Formatting Protocol (10 pts)**: Layout compliance and vital contact information.
+The scorer also returns:
+- Grade
+- Breakdown by dimension
+- Strengths
+- Prioritized feedback
 
-### 🤖 NVIDIA NIM Optimization
-When **Deep Scan** is initiated, HireLens utilizes NVIDIA's inference microservices to:
-1.  **Rewrite Bullets**: Transform passive tasks into high-impact numerical achievements.
-2.  **Strategic Summaries**: Craft professional objectives that bridge the candidate's history with the target JD.
-3.  **Keyword Injection**: Mathematically optimize skill placement for maximum ATS indexing.
+## Environment Variables
 
----
+Create `backend/.env`:
 
-## 🚀 Deployment & Installation
-
-### 1. Environment Configuration
-
-Create a `backend/.env` file:
 ```env
 PORT=5001
-MONGO_URI=mongodb+srv://...
-JWT_SECRET=...
-NVIDIA_API_KEY=nvapi-...        # Required for Deep Scan functions
+MONGO_URI=<your_mongodb_connection_string>
+JWT_SECRET=<your_jwt_secret>
+JWT_EXPIRES_IN=7d
+
+NVIDIA_API_KEY=<your_nvidia_api_key>
 NVIDIA_MODEL=meta/llama-3.1-8b-instruct
+
+CLIENT_URL=http://localhost:5173
 ```
 
-### 2. Backend Boot
+## Local Setup
+
+### 1) Install backend dependencies
+
 ```bash
 cd backend
 npm install
-npm run dev
 ```
 
-### 3. Frontend Boot
+### 2) Install frontend dependencies
+
 ```bash
-cd frontend
+cd ../frontend
 npm install
+```
+
+### 3) Run backend
+
+```bash
+cd ../backend
 npm run dev
 ```
 
----
+### 4) Run frontend
 
-## 📡 Primary API Interface
+```bash
+cd ../frontend
+npm run dev
+```
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/auth/register` | `POST` | Create high-authority user profile |
-| `/api/resume/upload` | `POST` | Secure PDF upload & parsing |
-| `/api/analysis/analyze` | `POST` | Launch deep-scan ATS diagnostic |
-| `/api/analysis/:id/optimize` | `POST` | NVIDIA-powered bulk resume rewrite |
-| `/api/analysis/:id/download-pdf` | `POST` | Generate executive-template PDF |
+Frontend runs on `http://localhost:5173` and proxies API calls to backend.
 
----
+## API Summary
 
-## 🎨 Design Philosophy — "Authority & Precision"
+### Auth
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `GET /api/auth/me`
 
-HireLens follows an **Expert-First** design philosophy:
-- **Glassmorphism**: Sophisticated semi-transparent layers for visual depth.
-- **Micro-Animations**: Staggered fades and frictionless transitions via Framer Motion.
-- **Legibility**: Forced contrast ratios in both Light and Dark themes to ensure 100% accessibility.
-- **Status Indicators**: Vibrant gradient rings and radar charts for immediate data interpretation.
+### Resume
+- `POST /api/resume/upload`
+- `GET /api/resume`
+- `GET /api/resume/history`
+- `GET /api/resume/:id`
+- `DELETE /api/resume/:id`
 
----
+### Analysis
+- `POST /api/analysis/analyze`
+- `GET /api/analysis`
+- `GET /api/analysis/:id`
+- `GET /api/analysis/:id/diff`
+- `POST /api/analysis/:id/optimize`
+- `POST /api/analysis/:id/download-pdf`
+- `GET /api/analysis/:id/export`
+- `POST /api/analysis/:id/cover-letter`
+- `POST /api/analysis/:id/interview-prep`
+- `PATCH /api/analysis/:id/roadmap/:skillId`
+- `DELETE /api/analysis/:id`
 
-## 📌 License
-MIT — Engineered for professional career acceleration.
+## Security and Reliability
+
+- JWT-protected private APIs
+- Input validation for critical request payloads
+- File upload restriction to PDF with size cap
+- AI endpoint rate limiting
+- Centralized error handling for upload and server errors
+
+## Performance Enhancements
+
+- In-memory cache for repeated AI generation requests
+- Pagination support for analysis and resume listings
+
+## UI and UX Documentation
+
+Detailed UI/UX documentation is available in:
+
+- `UI_UX_DETAILS.md`
+
+## Evaluation Suggestions (for Final-Year Report)
+
+Track and report:
+- Average ATS improvement before vs after optimization
+- Average API latency for analysis and AI generation endpoints
+- Completion rate of full flow (upload -> analyze -> optimize -> export)
+
+## Troubleshooting
+
+### Backend port already in use (EADDRINUSE)
+
+If port 5001 is already occupied, stop the existing process or change `PORT` in `.env`.
+
+### Frontend shows 400 on analyze request
+
+Check response JSON message and ensure:
+- `resumeId` is valid
+- job description is sufficiently long
+- token is valid and not expired
+
+### AI outputs unavailable
+
+Verify:
+- `NVIDIA_API_KEY` is present
+- model name is valid
+- rate limits are not exceeded
+
+## Future Scope
+
+- Persistent cache layer (Redis)
+- Password reset and email verification
+- Advanced report export (PDF/Docx for full analysis)
+- Role-based analytics dashboard
+- Automated test suite (API + UI)
+
+## License
+
+MIT License

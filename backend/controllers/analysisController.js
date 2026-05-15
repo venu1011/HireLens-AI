@@ -6,12 +6,36 @@ const generateSuggestions = require('../services/aiSuggestions');
 const generateRoadmap = require('../services/roadmapGenerator');
 const { generateResumeHighlights, generateJDHighlights } = require('../services/diffGenerator');
 const PDFDocument = require('pdfkit');
+const crypto = require('crypto');
+
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+const aiCache = new Map();
+
+const buildCacheKey = (...parts) => {
+  const raw = parts.filter(Boolean).join('::');
+  return crypto.createHash('sha256').update(raw).digest('hex');
+};
+
+const getCached = (key) => {
+  const cached = aiCache.get(key);
+  if (!cached) return null;
+  if (Date.now() > cached.expiresAt) {
+    aiCache.delete(key);
+    return null;
+  }
+  return cached.value;
+};
+
+const setCached = (key, value) => {
+  aiCache.set(key, { value, expiresAt: Date.now() + CACHE_TTL_MS });
+};
 
 // @desc    Analyze resume against job description
 // @route   POST /api/analysis/analyze
 exports.analyzeResume = async (req, res) => {
   try {
     const { resumeId, jobDescription, jobTitle, useAI } = req.body;
+    const useAIFlag = useAI === true || useAI === 'true';
 
     if (!resumeId || !jobDescription) {
       return res.status(400).json({ message: 'Resume ID and job description are required' });
@@ -51,13 +75,20 @@ exports.analyzeResume = async (req, res) => {
 
     // Generate AI suggestions if requested
     let aiSuggestions = [];
-    if (useAI) {
+    if (useAIFlag) {
       if (!process.env.NVIDIA_API_KEY) {
         aiSuggestions = ['AI suggestions unavailable — NVIDIA_API_KEY not set in .env'];
       } else {
+        const cacheKey = buildCacheKey('ai-suggestions', resumeId, jobDescription, missingSkills.join('|'));
         try {
-          const { generateAISuggestions } = require('../services/aiSuggestions');
-          aiSuggestions = await generateAISuggestions(resume.rawText, jobDescription, missingSkills);
+          const cached = getCached(cacheKey);
+          if (cached) {
+            aiSuggestions = cached;
+          } else {
+            const { generateAISuggestions } = require('../services/aiSuggestions');
+            aiSuggestions = await generateAISuggestions(resume.rawText, jobDescription, missingSkills);
+            setCached(cacheKey, aiSuggestions);
+          }
         } catch (aiError) {
           console.error('AI suggestions error:', aiError.message);
           // Try fallback if primary fails
@@ -79,6 +110,7 @@ exports.analyzeResume = async (req, res) => {
             const text = completion.choices[0].message.content;
             const match = text.match(/\[[\s\S]*\]/);
             aiSuggestions = match ? JSON.parse(match[0]) : text.split('\n').filter(Boolean).slice(0, 5);
+            setCached(cacheKey, aiSuggestions);
           } catch (fallbackErr) {
             console.error('Fallback model also failed:', fallbackErr.message);
             aiSuggestions = ['AI suggestions temporarily unavailable. Please try again later.'];
@@ -123,12 +155,28 @@ exports.analyzeResume = async (req, res) => {
 // @route   GET /api/analysis
 exports.getAnalyses = async (req, res) => {
   try {
-    const analyses = await Analysis.find({ userId: req.user._id })
-      .sort({ createdAt: -1 })
-      .populate('resumeId', 'fileName version atsScore')
-      .select('-jobDescription -roadmap');
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 20, 1), 100);
+    const skip = (page - 1) * limit;
 
-    res.json({ success: true, count: analyses.length, analyses });
+    const [total, analyses] = await Promise.all([
+      Analysis.countDocuments({ userId: req.user._id }),
+      Analysis.find({ userId: req.user._id })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .populate('resumeId', 'fileName version atsScore')
+        .select('-jobDescription -roadmap')
+    ]);
+
+    res.json({
+      success: true,
+      count: analyses.length,
+      total,
+      page,
+      pages: Math.ceil(total / limit),
+      analyses
+    });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching analyses', error: error.message });
   }
@@ -148,6 +196,30 @@ exports.getAnalysis = async (req, res) => {
     res.json({ success: true, analysis });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching analysis', error: error.message });
+  }
+};
+
+// @desc    Export analysis as JSON
+// @route   GET /api/analysis/:id/export
+exports.exportAnalysis = async (req, res) => {
+  try {
+    const analysis = await Analysis.findOne({ _id: req.params.id, userId: req.user._id })
+      .populate('resumeId', 'fileName version atsScore structuredData rawText');
+
+    if (!analysis) {
+      return res.status(404).json({ message: 'Analysis not found' });
+    }
+
+    const payload = {
+      exportedAt: new Date().toISOString(),
+      analysis
+    };
+
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="analysis-${analysis._id}.json"`);
+    res.status(200).send(JSON.stringify(payload, null, 2));
+  } catch (error) {
+    res.status(500).json({ message: 'Error exporting analysis', error: error.message });
   }
 };
 
@@ -227,6 +299,12 @@ exports.autoOptimize = async (req, res) => {
       return res.status(400).json({ message: 'NVIDIA_API_KEY not configured' });
     }
 
+    const optimizeCacheKey = buildCacheKey('optimize', analysis._id.toString(), analysis.jobDescription);
+    const cachedOptimize = getCached(optimizeCacheKey);
+    if (cachedOptimize) {
+      return res.json({ success: true, cached: true, ...cachedOptimize });
+    }
+
     const OpenAI = require('openai');
     const nvidiya = new OpenAI({
       apiKey: process.env.NVIDIA_API_KEY,
@@ -283,22 +361,6 @@ ${optimizedText.substring(0, 2000)}
 Return a JSON array of change description strings. Example: ["Rewrote summary to target X role", "Added missing keyword Y to skills section"]
 Return ONLY the JSON array.`;
 
-    const changelogCompletion = await nvidiya.chat.completions.create({
-      model: process.env.NVIDIA_MODEL || "meta/llama-3.1-8b-instruct",
-      messages: [{ role: 'user', content: changelogPrompt }],
-      temperature: 0.2,
-      max_tokens: 512,
-    });
-
-    const changelogText = changelogCompletion.choices[0].message.content;
-    let changelog;
-    try {
-      const jsonMatch = changelogText.match(/\[[\s\S]*\]/);
-      changelog = jsonMatch ? JSON.parse(jsonMatch[0]) : changelogText.split('\n').filter(Boolean).slice(0, 8);
-    } catch {
-      changelog = changelogText.split('\n').filter(l => l.trim()).slice(0, 8);
-    }
-
     const improvementPrompt = `Compare the ORIGINAL resume with the OPTIMIZED version for the given Job Description:
 
     JD: ${jdText.substring(0, 1000)}
@@ -313,12 +375,30 @@ Return ONLY the JSON array.`;
     }
     Return ONLY JSON.`;
 
-    const improvCompletion = await nvidiya.chat.completions.create({
-      model: process.env.NVIDIA_MODEL || "meta/llama-3.1-8b-instruct",
-      messages: [{ role: 'user', content: improvementPrompt }],
-      temperature: 0.1,
-      response_format: { type: "json_object" }
-    });
+    // --- RUN THESE TWO API CALLS AT THE SAME TIME TO SAVE TIME ---
+    const [changelogCompletion, improvCompletion] = await Promise.all([
+      nvidiya.chat.completions.create({
+        model: process.env.NVIDIA_MODEL || "meta/llama-3.1-8b-instruct",
+        messages: [{ role: 'user', content: changelogPrompt }],
+        temperature: 0.2,
+        max_tokens: 512,
+      }),
+      nvidiya.chat.completions.create({
+        model: process.env.NVIDIA_MODEL || "meta/llama-3.1-8b-instruct",
+        messages: [{ role: 'user', content: improvementPrompt }],
+        temperature: 0.1,
+        response_format: { type: "json_object" }
+      })
+    ]);
+
+    const changelogText = changelogCompletion.choices[0].message.content;
+    let changelog;
+    try {
+      const jsonMatch = changelogText.match(/\[[\s\S]*\]/);
+      changelog = jsonMatch ? JSON.parse(jsonMatch[0]) : changelogText.split('\n').filter(Boolean).slice(0, 8);
+    } catch {
+      changelog = changelogText.split('\n').filter(l => l.trim()).slice(0, 8);
+    }
 
     let improvement;
     try {
@@ -331,18 +411,37 @@ Return ONLY the JSON array.`;
       };
     }
 
-    res.json({
-      success: true,
+    const responsePayload = {
       text: optimizedText,
       changelog,
       originalScore: analysis.matchScore,
       projectedScore: improvement.projectedScore,
       missingSkillsAddressed: improvement.addressedSkills,
       impactSummary: improvement.impactSummary
+    };
+
+    setCached(optimizeCacheKey, responsePayload);
+
+    res.json({
+      success: true,
+      cached: false,
+      ...responsePayload
     });
   } catch (error) {
-    console.error('Auto-optimize error:', error);
-    res.status(500).json({ message: 'Error optimizing resume', error: error.message });
+    console.error('Auto-optimize error:', error.message);
+    console.error('Error details:', error.response?.data || error);
+    
+    // Better error messages
+    let message = 'Error optimizing resume';
+    if (error.message?.includes('401')) {
+      message = 'NVIDIA API Key is invalid or expired';
+    } else if (error.message?.includes('429')) {
+      message = 'API rate limit exceeded. Please try again in a few minutes.';
+    } else if (error.message?.includes('500')) {
+      message = 'NVIDIA API service temporarily unavailable';
+    }
+    
+    res.status(500).json({ message, error: error.message });
   }
 };
 
@@ -354,6 +453,18 @@ exports.generateCoverLetter = async (req, res) => {
     
     if (!analysis) {
       return res.status(404).json({ message: 'Analysis record not found' });
+    }
+
+    const interviewCacheKey = buildCacheKey('interview-prep', analysis._id.toString(), analysis.jobDescription);
+    const cachedInterview = getCached(interviewCacheKey);
+    if (cachedInterview) {
+      return res.json({ success: true, cached: true, questions: cachedInterview });
+    }
+
+    const coverCacheKey = buildCacheKey('cover-letter', analysis._id.toString(), analysis.jobDescription);
+    const cachedCover = getCached(coverCacheKey);
+    if (cachedCover) {
+      return res.json({ success: true, cached: true, coverLetter: cachedCover });
     }
 
     const OpenAI = require('openai');
@@ -384,13 +495,28 @@ exports.generateCoverLetter = async (req, res) => {
       max_tokens: 1500,
     });
 
+    const coverLetter = completion.choices[0].message.content.trim();
+    setCached(coverCacheKey, coverLetter);
+
     res.json({
       success: true,
-      coverLetter: completion.choices[0].message.content.trim()
+      cached: false,
+      coverLetter
     });
   } catch (error) {
-    console.error('Cover letter generation error:', error);
-    res.status(500).json({ message: 'Error generating cover letter', error: error.message });
+    console.error('Cover letter generation error:', error.message);
+    console.error('Error details:', error.response?.data || error);
+    
+    let message = 'Error generating cover letter';
+    if (error.message?.includes('401')) {
+      message = 'NVIDIA API Key is invalid or expired';
+    } else if (error.message?.includes('429')) {
+      message = 'API rate limit exceeded. Please try again later.';
+    } else if (error.message?.includes('500')) {
+      message = 'NVIDIA API service temporarily unavailable';
+    }
+    
+    res.status(500).json({ message, error: error.message });
   }
 };
 
@@ -444,13 +570,27 @@ exports.generateInterviewQuestions = async (req, res) => {
       // Fallback or manual extraction if needed, but usually NIM is good at JSON
     }
 
+    setCached(interviewCacheKey, questions);
+
     res.json({
       success: true,
+      cached: false,
       questions
     });
   } catch (error) {
-    console.error('Interview prep error:', error);
-    res.status(500).json({ message: 'Error generating interview questions', error: error.message });
+    console.error('Interview prep error:', error.message);
+    console.error('Error details:', error.response?.data || error);
+    
+    let message = 'Error generating interview questions';
+    if (error.message?.includes('401')) {
+      message = 'NVIDIA API Key is invalid or expired';
+    } else if (error.message?.includes('429')) {
+      message = 'API rate limit exceeded. Please try again later.';
+    } else if (error.message?.includes('500')) {
+      message = 'NVIDIA API service temporarily unavailable';
+    }
+    
+    res.status(500).json({ message, error: error.message });
   }
 };
 
@@ -509,12 +649,58 @@ exports.downloadPDF = async (req, res) => {
     const lines = text.split('\n');
     const sections = ['PROFESSIONAL SUMMARY', 'SKILLS', 'EXPERIENCE', 'PROJECTS', 'EDUCATION', 'CERTIFICATIONS', 'CONTACT', 'TECHNICAL SKILLS', 'ADDITIONAL SKILLS'];
 
+    const renderInlineBold = (line, options) => {
+      const parts = line.split('**');
+      const { font, boldFont, size, color, align, lineGap, indent, continuedIndent } = options;
+
+      parts.forEach((part, index) => {
+        const isBold = index % 2 === 1;
+        doc.font(isBold ? boldFont : font)
+          .fontSize(size)
+          .fillColor(color)
+          .text(part, {
+            continued: index < parts.length - 1,
+            align,
+            lineGap,
+            indent,
+            continuedIndent
+          });
+      });
+
+      doc.text('', { continued: false });
+    };
+
+    const renderLabelValue = (line, options) => {
+      const match = line.match(/^([^:]+):\s*(.*)$/);
+      if (!match) return false;
+
+      const { font, boldFont, size, color, align, lineGap, indent, continuedIndent } = options;
+      const label = match[1].trim();
+      const value = match[2];
+
+      doc.font(boldFont).fontSize(size).fillColor(color).text(`${label}: `, {
+        continued: true,
+        align,
+        lineGap,
+        indent,
+        continuedIndent
+      });
+      doc.font(font).fontSize(size).fillColor(color).text(value || '', {
+        align,
+        lineGap,
+        indent,
+        continuedIndent
+      });
+
+      return true;
+    };
+
     let isNameLine = true;
     let currentSection = '';
     let sectionStep = 0;
 
     for (const line of lines) {
-      let cleanLine = line.replace(/\*\*/g, '').replace(/\*/g, '').trim();
+      let cleanLine = line.trim();
       if (!cleanLine) {
         doc.moveDown(0.2);
         continue;
@@ -525,7 +711,7 @@ exports.downloadPDF = async (req, res) => {
 
       // 1. Handle Name & Contact (Top)
       if (isNameLine) {
-        doc.font('Helvetica-Bold').fontSize(theme.nameSize).fillColor(theme.accent).text(cleanLine.toUpperCase(), { align: theme.align });
+        doc.font('Helvetica-Bold').fontSize(theme.nameSize).fillColor(theme.accent).text(cleanLine.replace(/\*\*/g, '').replace(/\*/g, '').toUpperCase(), { align: theme.align });
         doc.moveDown(0.1);
         isNameLine = false;
         continue;
@@ -542,7 +728,7 @@ exports.downloadPDF = async (req, res) => {
         currentSection = sections.find(s => cleanLine.toUpperCase().startsWith(s));
         sectionStep = 0;
         doc.moveDown(0.6);
-        doc.font('Helvetica-Bold').fontSize(theme.hSize).fillColor(theme.accent).text(cleanLine.toUpperCase(), { characterSpacing: 0.5 });
+        doc.font('Helvetica-Bold').fontSize(theme.hSize).fillColor(theme.accent).text(cleanLine.replace(/\*\*/g, '').replace(/\*/g, '').toUpperCase(), { characterSpacing: 0.5 });
         doc.moveDown(0.05);
         
         // Subtle decorative line
@@ -556,8 +742,16 @@ exports.downloadPDF = async (req, res) => {
       // 3. Handle Content Logic
       if (isBullet) {
         const bulletText = cleanLine.replace(/^[•\-\*]\s*/, '').trim();
-        doc.font('Helvetica').fontSize(theme.bSize).fillColor('#111')
-          .text('•  ' + bulletText, { indent: 12, lineGap: 2, align: 'justify' });
+        renderInlineBold(bulletText, {
+          font: 'Helvetica',
+          boldFont: 'Helvetica-Bold',
+          size: theme.bSize,
+          color: '#111',
+          align: 'justify',
+          lineGap: 2,
+          indent: 12,
+          continuedIndent: 12
+        });
       } else {
         // Advanced parsing for Subheaders (Job Titles, Project Names, Degrees)
         const hasDate = /(20\d{2}|Present)/i.test(cleanLine);
@@ -574,10 +768,10 @@ exports.downloadPDF = async (req, res) => {
               doc.font('Helvetica-Bold').fontSize(theme.bSize + 0.5).fillColor('#1a1a2e').text(parts[0], { continued: true });
               doc.font('Helvetica').fontSize(theme.bSize).fillColor(theme.secondary).text('  |  ' + parts.slice(1).join(' | '));
             } else {
-              doc.font('Helvetica-Bold').fontSize(theme.bSize + 0.5).fillColor('#1a1a2e').text(cleanLine);
+              doc.font('Helvetica-Bold').fontSize(theme.bSize + 0.5).fillColor('#1a1a2e').text(cleanLine.replace(/\*\*/g, '').replace(/\*/g, ''));
             }
           } else {
-            doc.font('Helvetica-Bold').fontSize(theme.bSize).fillColor('#222').text(cleanLine);
+            doc.font('Helvetica-Bold').fontSize(theme.bSize).fillColor('#222').text(cleanLine.replace(/\*\*/g, '').replace(/\*/g, ''));
           }
           doc.moveDown(0.1);
           sectionStep++;
@@ -585,8 +779,26 @@ exports.downloadPDF = async (req, res) => {
           // Standard body text
           const color = (currentSection === 'SKILLS' || currentSection === 'TECHNICAL SKILLS') ? '#000' : '#333';
           const font = (currentSection === 'SKILLS' || currentSection === 'TECHNICAL SKILLS') ? 'Helvetica-Bold' : 'Helvetica';
-          
-          doc.font(font).fontSize(theme.bSize).fillColor(color).text(cleanLine, { lineGap: 1.8, align: 'justify' });
+
+          const renderedLabel = renderLabelValue(cleanLine, {
+            font,
+            boldFont: 'Helvetica-Bold',
+            size: theme.bSize,
+            color,
+            align: 'justify',
+            lineGap: 1.8
+          });
+
+          if (!renderedLabel) {
+            renderInlineBold(cleanLine, {
+              font,
+              boldFont: 'Helvetica-Bold',
+              size: theme.bSize,
+              color,
+              align: 'justify',
+              lineGap: 1.8
+            });
+          }
           sectionStep++;
         }
       }

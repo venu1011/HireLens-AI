@@ -9,6 +9,7 @@ export default function AnalyzePage() {
   const navigate = useNavigate()
   const [step, setStep] = useState(1)
   const [resumes, setResumes] = useState([])
+  const [resumeError, setResumeError] = useState('')
   const [file, setFile] = useState(null)
   const [selectedResumeId, setSelectedResumeId] = useState(null)
   const [jobDescription, setJobDescription] = useState('')
@@ -18,11 +19,16 @@ export default function AnalyzePage() {
   const [dragActive, setDragActive] = useState(false)
   const fileInputRef = useRef(null)
 
-  useEffect(() => {
-    resumeAPI.getAll()
+  const loadResumes = useCallback(() => {
+    setResumeError('')
+    resumeAPI.getAll({ page: 1, limit: 50 })
       .then(res => setResumes(res.data.resumes || []))
-      .catch(() => {})
+      .catch(() => setResumeError('Unable to load your resume library.'))
   }, [])
+
+  useEffect(() => {
+    loadResumes()
+  }, [loadResumes])
 
   const handleDrag = useCallback((e) => {
     e.preventDefault()
@@ -83,7 +89,12 @@ export default function AnalyzePage() {
       navigate(`/analysis/${analysisRes.data.analysis._id}`)
     } catch (err) {
       clearInterval(interval)
-      toast.error(err.response?.data?.message || err.response?.data?.error || 'Analysis failed')
+      const details = err.response?.data?.errors
+      if (Array.isArray(details) && details.length > 0) {
+        toast.error(details.map(d => d.message).join(' | '))
+      } else {
+        toast.error(err.response?.data?.message || err.response?.data?.error || 'Analysis failed')
+      }
     } finally {
       setLoading(false)
       setProgress(0)
@@ -162,7 +173,16 @@ export default function AnalyzePage() {
             </div>
 
             {/* Existing resumes */}
-            {resumes.length > 0 && (
+            {resumeError && (
+              <div className="mt-6 rounded-2xl p-4 border border-red-500/20 bg-red-500/5">
+                <p className="text-sm font-bold text-red-500 mb-3">{resumeError}</p>
+                <button onClick={loadResumes} className="btn-secondary py-2 px-5 text-xs">
+                  Retry
+                </button>
+              </div>
+            )}
+
+            {resumes.length > 0 && !resumeError && (
               <div className="mt-10">
                 <p className="text-xs text-muted font-black uppercase tracking-widest mb-4">Or select from library</p>
                 <div className="grid gap-3 max-h-64 overflow-y-auto pr-2 scrollbar-thin">

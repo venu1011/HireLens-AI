@@ -43,11 +43,27 @@ exports.uploadResume = async (req, res) => {
 // @route   GET /api/resume
 exports.getResumes = async (req, res) => {
   try {
-    const resumes = await Resume.find({ userId: req.user._id })
-      .sort({ createdAt: -1 })
-      .select('-rawText');
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 20, 1), 100);
+    const skip = (page - 1) * limit;
 
-    res.json({ success: true, count: resumes.length, resumes });
+    const [total, resumes] = await Promise.all([
+      Resume.countDocuments({ userId: req.user._id }),
+      Resume.find({ userId: req.user._id })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .select('-rawText')
+    ]);
+
+    res.json({
+      success: true,
+      count: resumes.length,
+      total,
+      page,
+      pages: Math.ceil(total / limit),
+      resumes
+    });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching resumes', error: error.message });
   }

@@ -1,10 +1,46 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import toast from 'react-hot-toast'
 import { analysisAPI } from '../services/api'
 import { FiArrowLeft, FiCheckCircle, FiXCircle, FiAlertCircle, FiBookOpen, FiZap, FiClock, FiBarChart2, FiCpu, FiTarget, FiTrendingUp, FiAward, FiShield, FiEdit3, FiUser, FiLayout, FiHash, FiFeather, FiPieChart, FiLayers, FiStar, FiTerminal, FiCrosshair, FiRefreshCw, FiColumns, FiDownload, FiFileText, FiInfo } from 'react-icons/fi'
 import SkillMatchChart from '../components/Charts/SkillMatchChart'
 import RadarMatchChart from '../components/Charts/RadarMatchChart'
+
+const HeatmapText = ({ text = '', matched = [] }) => {
+  if (!text) return <span className="text-slate-500 italic">No text extracted</span>
+
+  // Very basic regex to match words, to avoid splitting HTML
+  // We'll wrap matched skills in green.
+  let highlightedText = text;
+
+  matched.forEach(skill => {
+    // Avoid double highlighting or weird regex injections
+    try {
+      const regex = new RegExp(`\\b(${skill.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})\\b`, 'gi')
+      highlightedText = highlightedText.replace(regex, '___MATCHED___$1___ENDMATCHED___')
+    } catch(e) {}
+  });
+
+  const parts = highlightedText.split('___MATCHED___');
+  
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (part.includes('___ENDMATCHED___')) {
+          const [skill, ...rest] = part.split('___ENDMATCHED___')
+          return (
+            <span key={i}>
+              <span className="bg-green-500/20 text-green-400 border border-green-500/30 rounded px-1">{skill}</span>
+              {rest.join('___ENDMATCHED___')}
+            </span>
+          )
+        }
+        return <span key={i}>{part}</span>
+      })}
+    </>
+  )
+}
 
 export default function AnalysisResultPage() {
   const { id } = useParams()
@@ -240,6 +276,22 @@ export default function AnalysisResultPage() {
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* ATS Extracted Text / Heatmap Preview */}
+          <div className="card">
+            <div className="flex items-center gap-2 mb-4 pb-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'rgba(59,130,246,0.1)' }}>
+                <FiFileText className="w-3.5 h-3.5 text-blue-400" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-white text-sm">ATS Extraction Heatmap</h3>
+                <p className="text-xs text-slate-500">How applicant tracking systems see your resume content</p>
+              </div>
+            </div>
+            <div className="text-xs text-slate-400 leading-relaxed max-h-[300px] overflow-y-auto pr-2 whitespace-pre-wrap font-mono" style={{ scrollbarWidth: 'thin' }}>
+              <HeatmapText text={resumeId?.rawText} matched={matchedSkills} />
             </div>
           </div>
 
